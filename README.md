@@ -3,12 +3,22 @@
 
 Use axios to fetch data, but configure every api with 4 levels of configurations. And It will handle the most important and frequently used configurations of axios properly (merge, join or replace). Additionally, seperate remote apis to diffirent modules is the recommand way to use Maxios.
 
+## Install
+
+```sh
+# NPM
+npm install @awey/maxios --save
+
+# Yarn
+yarn add @awey/maxios
+```
+
 ## Usage
 
 A basic example of maxios usage is like below:
 
 ```ts
-import { modulize } from '@awey/utils/dist/maxios'
+import { modulize } from '@awey/maxios'
 
 // get modulized request function
 const request = modulize({
