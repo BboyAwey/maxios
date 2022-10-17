@@ -365,29 +365,29 @@ class Maxios<
         .then(res => {
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
-            this.#processorManager.executeAnywayProcessors()
-            nextTick(() => {
-              if (!res) return
-              // use indicator
-              const hasBizError = !this.#configManager.getNearestCallback('indicator', () => true)(res)
-              if (!hasBizError) {
-                // use extractor
-                const extractor = this.#configManager.getNearestCallback(
-                  'extractor',
-                  (res: AxiosResponse<OriginResult, Payload>) => res.data
-                )
-                let extractRes: FinalResult | undefined
+            if (!res) return
+            // use indicator
+            const hasBizError = !this.#configManager.getNearestCallback('indicator', () => true)(res)
+            if (!hasBizError) {
+              // use extractor
+              const extractor = this.#configManager.getNearestCallback(
+                'extractor',
+                (res: AxiosResponse<OriginResult, Payload>) => res.data
+              )
+              let extractRes: FinalResult | undefined
 
-                extractRes = extractor(res)
-                this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
+              extractRes = extractor(res)
+              this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
 
-                // cache result
-                if (cacheConfig) {
-                  daches[cacheConfig.type].set(cacheConfig.key, extractRes)
-                }
-              } else {
-                this.#processorManager.executeBizErrorProcessors(res)
+              // cache result
+              if (cacheConfig) {
+                daches[cacheConfig.type].set(cacheConfig.key, extractRes)
               }
+            } else {
+              this.#processorManager.executeBizErrorProcessors(res)
+            }
+            nextTick(() => {
+              this.#processorManager.executeAnywayProcessors()
             })
           })
         })

@@ -37,6 +37,12 @@ global<Response<unknown>>({
   },
   error (err) {
     console.log(err)
+  },
+  success () {
+    console.log('success from global')
+  },
+  anyway () {
+    console.log('anyway from global')
   }
 })
 
@@ -70,6 +76,12 @@ const request = modulize(() => ({
     console.log(data, '--biz error from module')
     return true
   },
+  success () {
+    console.log('success from module')
+  },
+  anyway () {
+    console.log('anyway from module')
+  }
   // indicator (response) {
   //   return response.data.code === 0
   // }
@@ -116,9 +128,13 @@ const apis = {
     return request({
       axiosConfig: {
         url: '/get-shit'
+      },
+      success () {
+        console.log('success from api')
+      },
+      anyway () {
+        console.log('anyway from api')
       }
-    }).success((res) => {
-      console.log('success: ', res)
     })
   }
 }
@@ -172,6 +188,12 @@ function sendRequest () {
   //   return true
   // })
   apis.getShit()
+    .success(() => {
+      console.log('success from request')
+    })
+    .anyway(() => {
+      console.log('anyway from request')
+    })
   errorApis.getBizError({ a: 2 })
 }
 
