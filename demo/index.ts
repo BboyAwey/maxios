@@ -1,4 +1,4 @@
-import { AxiosResponse } from 'axios'
+// import { AxiosResponse } from 'axios'
 import { global, modulize } from '../maxios/maxios'
 
 interface Response<T> {
@@ -172,7 +172,7 @@ function sendRequest () {
   //   return true
   // })
   apis.getShit()
-  errorApis.getBizError()
+  errorApis.getBizError({ a: 2 })
 }
 
 window.addEventListener('load', () => {
