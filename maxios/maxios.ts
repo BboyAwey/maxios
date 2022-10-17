@@ -55,14 +55,14 @@ const getGlobalConfig = (): IMaxiosConfig => {
   } else return globalConfig
 }
 
-export const global = <OriginResult> (
+export const global = <OriginResult = any> (
   config: IMaxiosConfig<unknown, OriginResult> | (() => IMaxiosConfig<unknown, OriginResult>)
 ) => {
   globalConfig = config
 }
 
-export const modulize = <OriginResult, FinalResult = OriginResult> (
-  config: IMaxiosConfig<unknown, OriginResult, FinalResult> | (() => IMaxiosConfig<unknown, OriginResult, FinalResult>) = {}
+export const modulize = <OriginResult = any> (
+  config: IMaxiosConfig<unknown, OriginResult> | (() => IMaxiosConfig<unknown, OriginResult>) = {}
 ): (<
   Payload = any,
   OriginResult = any,
