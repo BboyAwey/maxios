@@ -25,7 +25,7 @@ interface IProcessorsChain<Payload, OriginResult, FinalResult> {
 
 type TIndicator<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
 
-type TExtractor<Payload = any, OriginResult = any, FinalResult = OriginResult> = (response: AxiosResponse<OriginResult, Payload>) => FinalResult
+type TExtractor<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => unknown
 
 type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosRequestConfig<D>) => Promise<R>
 
@@ -37,8 +37,8 @@ export interface IMaxiosConfig<
   FinalResult = OriginResult
 > extends IProcessors<Payload, OriginResult, FinalResult>, Partial<Record<TNearestCallbackName, any>> {
   axiosConfig?: AxiosRequestConfig<Payload>
-  indicator?: TIndicator<OriginResult>
-  extractor?: TExtractor<Payload, OriginResult, FinalResult>
+  indicator?: TIndicator<Payload, OriginResult>
+  extractor?: TExtractor<Payload, OriginResult>
   request?: TRequest
   cache?: {
     type: TCacheType
@@ -55,11 +55,15 @@ const getGlobalConfig = (): IMaxiosConfig => {
   } else return globalConfig
 }
 
-export const global = (config: IMaxiosConfig | (() => IMaxiosConfig)) => {
+export const global = <OriginResult> (
+  config: IMaxiosConfig<unknown, OriginResult> | (() => IMaxiosConfig<unknown, OriginResult>)
+) => {
   globalConfig = config
 }
 
-export const modulize = (config: IMaxiosConfig | (() => IMaxiosConfig) = {}): (<
+export const modulize = <OriginResult, FinalResult = OriginResult> (
+  config: IMaxiosConfig<unknown, OriginResult, FinalResult> | (() => IMaxiosConfig<unknown, OriginResult, FinalResult>) = {}
+): (<
   Payload = any,
   OriginResult = any,
   FinalResult = OriginResult
@@ -368,13 +372,18 @@ class Maxios<
               const hasBizError = !this.#configManager.getNearestCallback('indicator', () => true)(res)
               if (!hasBizError) {
                 // use extractor
-                const extractRes: FinalResult = this.#configManager.getNearestCallback('extractor', (res: AxiosResponse<OriginResult, Payload>) => res.data)(res)
-                if (extractRes !== undefined) {
-                  this.#processorManager.executeSuccessProcessors(extractRes)
-                  // cache result
-                  if (cacheConfig) {
-                    daches[cacheConfig.type].set(cacheConfig.key, extractRes)
-                  }
+                const extractor = this.#configManager.getNearestCallback(
+                  'extractor',
+                  (res: AxiosResponse<OriginResult, Payload>) => res.data
+                )
+                let extractRes: FinalResult | undefined
+
+                extractRes = extractor(res)
+                this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
+
+                // cache result
+                if (cacheConfig) {
+                  daches[cacheConfig.type].set(cacheConfig.key, extractRes)
                 }
               } else {
                 this.#processorManager.executeBizErrorProcessors(res)
