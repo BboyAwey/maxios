@@ -18,5 +18,10 @@ export default defineConfig({
     dts({
       entryRoot: resolve(__dirname, './maxios')
     })
-  ]
+  ],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000'
+    }
+  }
 })
