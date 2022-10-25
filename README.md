@@ -185,6 +185,6 @@ They are the same as the callbacks in configuration object. And the latter-calle
 
 ## Maxios API
 
-`global(config: IMaxiosConfig) => void`: global configuration function
-`modulize(config: IMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
-`Maxios.cancelActiveRequests()j => void`: a function that used to cancel all active requests
+`global(config: IMaxiosConfig | () => IMaxiosConfig) => void`: global configuration function
+`modulize(config: IMaxiosConfig | () => IMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
+`Maxios.cancelActiveRequests() => void`: a function that used to cancel all active requests
