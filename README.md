@@ -152,7 +152,7 @@ interface IMaxiosConfig {
 * `error`: a callback function which will be executed when response status code is not right. It recieves an argument `axiosError`. And it can return `true` to use next `error` callbacks from upper layers
 * `bizError`: a callback function which will be executed when `indicator` returns false. It recieves an argument `data` as the origin response data. And it can return `true` to executed next `bizError` callbacks from upper layers
 * `success`: a callback function which will be executed when `indicator` returns true. It recieves an argument `data` as the final response data (the data has been handled by `extractor`).
-* `anyway`: a callback function which will be always executed. It recieves nothing and will be executed before `success` callback for convenience
+* `anyway`: a callback function which will be always executed.
 
 ### Configuration priorities
 
