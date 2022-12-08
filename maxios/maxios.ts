@@ -157,7 +157,7 @@ class MaxiosProcessorManager<
     if (typeof config.error === 'function') this.addRequestErrorProcessor(config.error)
     if (typeof config.bizError === 'function') this.addBizErrorProcessor(config.bizError)
     if (typeof config.success === 'function') this.addSuccessProcessor(config.success)
-    if (typeof config.anyway === 'function') this.addSuccessProcessor(config.anyway)
+    if (typeof config.anyway === 'function') this.addAnywayProcessor(config.anyway)
   }
 
   chain () {
