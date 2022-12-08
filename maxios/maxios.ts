@@ -353,9 +353,10 @@ class Maxios<
       nextTick(() => {
         this.#processorManager.executeLoadingProcessors()
         nextTick(() => {
-          this.#processorManager.executeAnywayProcessors()
+          this.#processorManager.executeSuccessProcessors(daches[cacheConfig.type].get(cacheConfig.key))
           nextTick(() => {
-            this.#processorManager.executeSuccessProcessors(daches[cacheConfig.type].get(cacheConfig.key))
+            // make sure anyway processor is been executed after any other processors
+            this.#processorManager.executeAnywayProcessors()
           })
         })
       })
@@ -387,6 +388,7 @@ class Maxios<
               this.#processorManager.executeBizErrorProcessors(res)
             }
             nextTick(() => {
+              // make sure anyway processor is been executed after any other processors
               this.#processorManager.executeAnywayProcessors()
             })
           })
@@ -394,8 +396,13 @@ class Maxios<
         .catch(err => {
           this.#processorManager.executeLoadingProcessors()
           if (axios.isCancel(err)) return
+          
           nextTick(() => {
             this.#processorManager.executeRequestErrorProcessors(err)
+            nextTick(() => {
+              // make sure anyway processor is been executed after any other processors
+              this.#processorManager.executeAnywayProcessors()
+            })
           })
         })
     }
