@@ -149,7 +149,7 @@ class MaxiosProcessorManager<
   }
 
   addAnywayProcessor (fn: TAnyway) {
-    this.#anywayFns.unshift(fn)
+    this.#anywayFns.push(fn)
   }
 
   loadProcessorFromMaxiosConfig (config: IMaxiosConfig) {
