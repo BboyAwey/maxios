@@ -198,7 +198,8 @@ function sendRequest () {
 
   race<{ shit: 1 }>([
     apis.getShit(),
-    apis.getShit()
+    apis.getShit(),
+    errorApis.getBizError({ a: 2 })
   ])
     .anyway(() => {
       console.log('---race anyway')
