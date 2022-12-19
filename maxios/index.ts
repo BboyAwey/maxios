@@ -27,21 +27,21 @@ export const modulize = <OriginResult = any> (
 }
 
 export const race = <Result = any>(
-  processChains: IProcessorsChain<any, any, any>[]
+  requests: IProcessorsChain<any, any, any>[]
 ) => {
   const pm = new ProcessorManager<any, any, Result>()
   let isSuccessfull = false
-  let count = processChains.length
+  let count = requests.length
 
-  processChains.forEach(ps => {
-    ps.success(res => {
+  requests.forEach(req => {
+    req.success(res => {
       if (!isSuccessfull) {
         pm.executeSuccessProcessors(res as Result)
         isSuccessfull = true 
       }
     })
 
-    ps.anyway(() => {
+    req.anyway(() => {
       count -= 1
       if (!count) {
         pm.executeAnywayProcessors()
@@ -49,10 +49,10 @@ export const race = <Result = any>(
       }
     })
 
-    ps.bizError((err) => {
+    req.bizError((err) => {
       pm.executeBizErrorProcessors(err)
     })
-    ps.error((err) => {
+    req.error((err) => {
       pm.executeRequestErrorProcessors(err)
     })
   })
@@ -61,15 +61,15 @@ export const race = <Result = any>(
 }
 
 export const all = <Result = any[]>(
-  processChains: IProcessorsChain<any, any, any>[]
+  requests: IProcessorsChain<any, any, any>[]
 ) => {
   const pm = new ProcessorManager<any, any, Result>()
-  let successfullCount = processChains.length
-  let anywayCount = processChains.length
+  let successfullCount = requests.length
+  let anywayCount = requests.length
   const result = [] as any[]
 
-  processChains.forEach((ps, i) => {
-    ps.success(res => {
+  requests.forEach((req, i) => {
+    req.success(res => {
       successfullCount -= 1
       result[i] = res
       if (!successfullCount) {
@@ -77,7 +77,7 @@ export const all = <Result = any[]>(
       }
     })
 
-    ps.anyway(() => {
+    req.anyway(() => {
       anywayCount -= 1
       if (!anywayCount) {
         pm.executeAnywayProcessors()
@@ -85,10 +85,10 @@ export const all = <Result = any[]>(
       }
     })
 
-    ps.bizError((err) => {
+    req.bizError((err) => {
       pm.executeBizErrorProcessors(err)
     })
-    ps.error((err) => {
+    req.error((err) => {
       pm.executeRequestErrorProcessors(err)
     })
   })

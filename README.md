@@ -183,8 +183,40 @@ In general, lower-level configurations take precedence over higher-level configu
 
 They are the same as the callbacks in configuration object. And the latter-called function has a higher level. They all follow the same priorities above.
 
+## Race and All
+
+You can handle multiple requests with `race()` or `all()` function. Just like bellow:
+
+ ```ts
+all<[User[], Group[], Room[]]>([
+  userModel.getUsers({ gender: 'female' }),
+  groupModel.getGroups(),
+  roomModel.getRooms({ lang: 'zh' })
+])
+  .success((res) => {
+    console.log('---race success', res)
+  })
+  .anyway(() => {
+    console.log('---race anyway')
+  })
+
+race<User[] | Group[] | Room[]>([
+  userModel.getUsers({ gender: 'female' }),
+  groupModel.getGroups(),
+  roomModel.getRooms({ lang: 'zh' })
+])
+  .success((res) => {
+    console.log('---race success', res)
+  })
+  .anyway(() => {
+    console.log('---race anyway')
+  })
+```
+
 ## Maxios API
 
-`global(config: IMaxiosConfig | () => IMaxiosConfig) => void`: global configuration function
-`modulize(config: IMaxiosConfig | () => IMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
-`Maxios.cancelActiveRequests() => void`: a function that used to cancel all active requests
+* `global(config: IMaxiosConfig | () => IMaxiosConfig) => void`: global configuration function
+* `modulize(config: IMaxiosConfig | () => IMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
+* `race(requests: IProcessChain[]) => IProcessChain`: a function that can race all giving requests and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
+* `all(requests: IProcessChain[]) => IProcessChain`: a function that can get all giving requests's result and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
+* `Maxios.cancelActiveRequests() => void`: a function that used to cancel all active requests
