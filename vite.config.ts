@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: 'lib',
     minify: false,
     lib: {
-      entry: resolve(__dirname, './maxios/maxios.ts'),
+      entry: resolve(__dirname, './maxios/index.ts'),
       name: packageInfo.name,
       formats: ['es', 'umd', 'cjs'],
       fileName: 'maxios'

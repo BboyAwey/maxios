@@ -1,5 +1,5 @@
 // import { AxiosResponse } from 'axios'
-import { global, modulize } from '../maxios/maxios'
+import { global, modulize } from '../maxios'
 
 interface Response<T> {
   code: number
