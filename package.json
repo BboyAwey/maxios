@@ -1,7 +1,7 @@
 {
   "name": "@awey/maxios",
   "description": "Use axios to fetch data, but configure every api with 4 levels of configurations.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": {
     "name": "Awey",
     "email": "bboyawey@sina.cn"
