@@ -214,7 +214,7 @@ function sendRequest () {
       console.log('---race biz err', err)
     })
   
-  all<{ shit: number }>([
+  all<[{ shit: number }, { shit: 1 }]>([
     apis.getShit(),
     apis.getShit(),
     // errorApis.getBizError({ a: 2 })
