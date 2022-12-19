@@ -1,5 +1,5 @@
 // import { AxiosResponse } from 'axios'
-import { global, modulize } from '../maxios'
+import { all, global, modulize, race } from '../maxios'
 
 interface Response<T> {
   code: number
@@ -187,14 +187,49 @@ function sendRequest () {
   //   console.log(err, '--http err from request')
   //   return true
   // })
-  apis.getShit()
-    .success(() => {
-      console.log('success from request')
-    })
+  // apis.getShit()
+  //   .success(() => {
+  //     console.log('success from request')
+  //   })
+  //   .anyway(() => {
+  //     console.log('anyway from request')
+  //   })
+  // errorApis.getBizError({ a: 2 })
+
+  race<{ shit: 1 }>([
+    apis.getShit(),
+    apis.getShit()
+  ])
     .anyway(() => {
-      console.log('anyway from request')
+      console.log('---race anyway')
     })
-  errorApis.getBizError({ a: 2 })
+    .success((res) => {
+      console.log('---race success', res)
+    })
+    .error(err => {
+      console.log('---race err', err)
+    })
+    .bizError(err => {
+      console.log('---race biz err', err)
+    })
+  
+  all<{ shit: number }>([
+    apis.getShit(),
+    apis.getShit(),
+    // errorApis.getBizError({ a: 2 })
+  ])
+    .anyway(() => {
+      console.log('---all anyway')
+    })
+    .success((res) => {
+      console.log('---all success', res)
+    })
+    .error(err => {
+      console.log('---all err', err)
+    })
+    .bizError(err => {
+      console.log('---all biz err', err)
+    })
 }
 
 window.addEventListener('load', () => {
