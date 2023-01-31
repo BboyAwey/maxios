@@ -102,7 +102,13 @@ export const toPromise = <Payload = any, OriginResult = any, FinalResult = Origi
   return new Promise<FinalResult>((resolve, reject) => {
     request
       .success(res => resolve(res))
-      .error(error => reject(new Error(error.message, error.cause)))
-      .bizError(res => reject(new Error(JSON.stringify(res))))
+      .error(error => {
+        reject(new Error(error.message, error.cause))
+        return true
+      })
+      .bizError(res => {
+        reject(new Error(JSON.stringify(res)))
+        return true
+      })
   })
 }
