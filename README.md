@@ -228,6 +228,8 @@ toPromise(userModel.getUsers({ gender: 'female' }))
   .finally(() => console.log('to promise finally'))
 ```
 
+> ATTENTION: the request chain object should return `true` in it's `error` or `bizError` handler if it will wrapped by `toPromise()`, otherwise the promise instance will not work.
+
 ## Maxios API
 
 * `global(config: IMaxiosConfig | () => IMaxiosConfig) => void`: global configuration function
