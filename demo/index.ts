@@ -1,5 +1,5 @@
 // import { AxiosResponse } from 'axios'
-import { all, global, modulize, race } from '../src'
+import { all, global, modulize, race, toPromise } from '../src'
 
 interface Response<T> {
   code: number
@@ -231,6 +231,13 @@ function sendRequest () {
     .bizError(err => {
       console.log('---all biz err', err)
     })
+  toPromise(request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
+    axiosConfig: {
+      url: '/error'
+    }
+  }))
+    .then(res => console.log('to promise res', res))
+    .catch(error => console.log('to promise error', error))
 }
 
 window.addEventListener('load', () => {
