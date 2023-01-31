@@ -1,7 +1,7 @@
 
 # Maxios
 
-Use axios to fetch data, but configure every api with 4 levels of configurations. And It will handle the most important and frequently used configurations of axios properly (merge, join or replace). Additionally, seperate remote apis to diffirent modules is the recommand way to use Maxios.
+Use axios to fetch data, but configure every api with 4 levels of configurations. And It will handle the most important and frequently-used configurations of axios properly (merge, join or replace). Additionally, seperating remote apis to diffirent modules is the recommended way to use Maxios.
 
 ## Install
 
@@ -33,7 +33,7 @@ request().success(res => {
 })
 ```
 
-But the recommanded way to use Maxios is modulize your apis as an object model. you can create a file named `src/models/user.ts`:
+But the recommended way to use Maxios is modulize your apis as a model. you can create a file named `src/models/user.ts`:
 
 ```ts
 /* src/models/user.ts */
@@ -59,7 +59,7 @@ const request = modulize({
   }
 })
 
-// modulize your apis
+// modulize your apis as an object
 export default Object.frees({
   getUsers (condition: Patial<UserInfo>) {
     return request<void, ResponseData<User[]>>({
@@ -75,44 +75,48 @@ export default Object.frees({
         url: `/${id}`
       }
     })
-  },
-
-  createUser (userInfo: UserInfo) {
-    return request<UserInfo, ResponseData<User>>({
-      axiosConfig: {
-        method: 'POST',
-        data: userInfo
-      }
-    })
-  },
-
-  deleteUserById (id: number) {
-    return request<void, ResponseData<void>>({
-      axiosConfig: {
-        url: `/${id}`,
-        method: 'DELETE'
-      }
-    })
-  },
-
-  updateUser (user: User) {
-    return request<user, ResponseData<void>>({
-      axiosConfig: {
-        url: `/${user.id}`,
-        method: 'PUT'
-      }
-    })
   }
 })
+
+// or just export model apis one by one
+export const createUser = (userInfo: UserInfo) => {
+  return request<UserInfo, ResponseData<User>>({
+    axiosConfig: {
+      method: 'POST',
+      data: userInfo
+    }
+  })
+}
+
+export const deleteUserById = (id: number) => {
+  return request<void, ResponseData<void>>({
+    axiosConfig: {
+      url: `/${id}`,
+      method: 'DELETE'
+    }
+  })
+}
+
+export const updateUser = (user: User) => {
+  return request<user, ResponseData<void>>({
+    axiosConfig: {
+      url: `/${user.id}`,
+      method: 'PUT'
+    }
+  })
+}
 ```
 
-And you can use those user model apis like below:
+And you can use those model apis like below:
 
 ```ts
-import userModel from 'src/model/user'
+import userModel, { deleteUserById } from 'src/model/user'
 
 userModel.getUsers({ name: 'Tony'})
   .success(res => console.log(res.data))
+
+deleteUserById(1)
+  .success(res => console.log(res))
 ```
 
 ## Configuration
@@ -211,6 +215,17 @@ race<User[] | Group[] | Room[]>([
   .anyway(() => {
     console.log('---race anyway')
   })
+```
+
+## `toPromise()`
+
+Sometimes you will need to convert a request chain object to a standard promise instance, then `toPromise()` function will be a handy util for you.
+
+```ts
+toPromise(userModel.getUsers({ gender: 'female' }))
+  .then(res => console.log('to promise res', res))
+  .catch(error => console.log('to promise error', error))
+  .finally(() => console.log('to promise finally'))
 ```
 
 ## Maxios API
