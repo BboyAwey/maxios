@@ -72,6 +72,9 @@ const request = modulize(() => ({
       XXXXMODULE: num + ''
     }
   },
+  error (error) {
+    console.log('module error', error)
+  },
   bizError (data: any) {
     console.log(data, '--biz error from module')
     return true
@@ -179,6 +182,18 @@ const errorApis = {
   // }
 }
 
+const getError = () => {
+  return request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
+    axiosConfig: {
+      url: '/error'
+    },
+    error (error) {
+      console.log('request error', error)
+      return true
+    }
+  })
+}
+
 function sendRequest () {
   // errorApis.getBizError({ a: 1 }).bizError((data) => {
   //   console.log(data, '--biz error from request')
@@ -231,11 +246,7 @@ function sendRequest () {
     .bizError(err => {
       console.log('---all biz err', err)
     })
-  toPromise(request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
-    axiosConfig: {
-      url: '/error'
-    }
-  }))
+  toPromise(getError())
     .then(res => console.log('to promise res', res))
     .catch(error => console.log('to promise error', error))
 }
