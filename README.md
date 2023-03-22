@@ -198,10 +198,10 @@ all<[User[], Group[], Room[]]>([
   roomModel.getRooms({ lang: 'zh' })
 ])
   .success((res) => {
-    console.log('---race success', res)
+    console.log('---all success', res)
   })
   .anyway(() => {
-    console.log('---race anyway')
+    console.log('---all anyway')
   })
 
 race<User[] | Group[] | Room[]>([
