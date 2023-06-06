@@ -51,7 +51,7 @@ export class Maxios<
       nextTick(() => {
         this.#processorManager.executeLoadingProcessors()
         nextTick(() => {
-          this.#processorManager.executeSuccessProcessors(daches[cacheConfig.type].get(cacheConfig.key))
+          this.#processorManager.executeSuccessProcessors(daches[cacheConfig.type].get(cacheConfig.key)!)
           nextTick(() => {
             // make sure anyway processor is been executed after any other processors
             this.#processorManager.executeAnywayProcessors()
