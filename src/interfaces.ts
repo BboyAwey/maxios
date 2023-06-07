@@ -7,16 +7,12 @@ export type TBizError<Result> = (data: Result) => void | boolean
 export type TSuccess<Result> = (data: Result) => void
 export type TAnyway = () => void
 
-export interface IProcessors<Payload, OriginResult, FinalResult> {
-  loading?: TLoading
-  error?: TRequestError<Payload, OriginResult>
-  bizError?: TBizError<OriginResult>
-  success?: TSuccess<FinalResult>
-  anyway?: TAnyway
-}
-
-export interface IProcessorsChain<Payload, OriginResult, FinalResult> {
-  loading: (arg: TLoading) => IProcessorsChain<Payload, OriginResult, FinalResult>
+export type TProcessorNames = Partial<Record<
+  'loading' | 'error' | 'bizError' | 'success' | 'anyway',
+  any
+>>
+export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TProcessorNames {
+  loading: (fn: TLoading) => IProcessorsChain<Payload, OriginResult, FinalResult>
   success: (fn: TSuccess<FinalResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   error: (fn: TRequestError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   bizError: (fn: TBizError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
@@ -35,7 +31,7 @@ export interface IMaxiosConfig<
   Payload = any,
   OriginResult = any,
   FinalResult = OriginResult
-> extends IProcessors<Payload, OriginResult, FinalResult>, Partial<Record<TNearestCallbackName, any>> {
+> extends TProcessorNames, Partial<Record<TNearestCallbackName, any>> {
   axiosConfig?: AxiosRequestConfig<Payload>
   indicator?: TIndicator<Payload, OriginResult>
   extractor?: TExtractor<Payload, OriginResult>
@@ -45,4 +41,10 @@ export interface IMaxiosConfig<
     key: string
   }
   cancelable?: boolean
+  // processors 
+  loading?: TLoading
+  error?: TRequestError<Payload, OriginResult>
+  bizError?: TBizError<OriginResult>
+  success?: TSuccess<FinalResult>
+  anyway?: TAnyway
 }

@@ -5,31 +5,42 @@ import {
   TAnyway,
   TBizError,
   TLoading,
+  TProcessorNames,
   TRequestError,
   TSuccess
 } from './interfaces'
+
+interface IProcessorSets<Payload, OriginResult, FinalResult> extends TProcessorNames {
+  loading: TLoading[]
+  error: TRequestError<Payload, OriginResult>[],
+  bizError: TBizError<OriginResult>[]
+  success: TSuccess<FinalResult>[]
+  anyway: TAnyway[]
+}
 
 class ProcessorManager<
   Payload = any,
   OriginResult = any,
   FinalResult = OriginResult
 > {
-  #loadingFns: TLoading[] = []
-  #requestErrorFns: TRequestError<Payload, OriginResult>[] = []
-  #bizErrorFns: TBizError<OriginResult>[] = []
-  #successFns: TSuccess<FinalResult>[] = []
-  #anywayFns: TAnyway[] = []
+  #processors: IProcessorSets<Payload, OriginResult, FinalResult> = {
+    loading: [],
+    error: [],
+    bizError: [],
+    success: [],
+    anyway: []
+  }
 
   executeLoadingProcessors () {
-    this.#loadingFns.forEach(fn => {
-      try {
-        fn(false)
-      } catch (err) { console.warn(err) }
+    const processors = [...this.#processors.loading].reverse()
+    processors.forEach(fn => {
+      try { fn(false) } catch (err) { console.warn(err) }
     })
   }
 
   executeRequestErrorProcessors (err: AxiosError<OriginResult, Payload>) {
-    for (const fn of this.#requestErrorFns) {
+    const processors = [...this.#processors.error].reverse()
+    for (const fn of processors) {
       try {
         if (!fn(err)) break
       } catch (err) { console.warn(err) }
@@ -37,7 +48,8 @@ class ProcessorManager<
   }
 
   executeBizErrorProcessors (response: AxiosResponse<OriginResult, Payload>) {
-    for (const fn of this.#bizErrorFns) {
+    const processors = [...this.#processors.bizError].reverse()
+    for (const fn of processors) {
       try {
         if (!fn(response.data)) break
       } catch (err) { console.warn(err) }
@@ -45,68 +57,48 @@ class ProcessorManager<
   }
 
   executeSuccessProcessors (result: FinalResult) {
-    this.#successFns.forEach(fn => {
-      try {
-        fn(result)
-      } catch (err) { console.warn(err) }
+    this.#processors.success.forEach(fn => {
+      try { fn(result) } catch (err) { console.warn(err) }
     })
   }
 
   executeAnywayProcessors () {
-    this.#anywayFns.forEach(fn => {
+    this.#processors.anyway.forEach(fn => {
       try { fn() } catch (err) { console.warn(err) }
     })
   }
 
-  addLoadingProcessor (arg: TLoading) {
-    this.#loadingFns.push(arg)
-    arg(true)
-  }
-
-  addSuccessProcessor (fn: TSuccess<FinalResult>) {
-    this.#successFns.push(fn)
-  }
-
-  addRequestErrorProcessor (fn: TRequestError<Payload, OriginResult>) {
-    this.#requestErrorFns.unshift(fn)
-  }
-
-  addBizErrorProcessor (fn: TBizError<OriginResult>) {
-    this.#bizErrorFns.unshift(fn)
-  }
-
-  addAnywayProcessor (fn: TAnyway) {
-    this.#anywayFns.push(fn)
-  }
-
   loadProcessorFromMaxiosConfig (config: IMaxiosConfig) {
-    if (typeof config.loading === 'function') this.addLoadingProcessor(config.loading)
-    if (typeof config.error === 'function') this.addRequestErrorProcessor(config.error)
-    if (typeof config.bizError === 'function') this.addBizErrorProcessor(config.bizError)
-    if (typeof config.success === 'function') this.addSuccessProcessor(config.success)
-    if (typeof config.anyway === 'function') this.addAnywayProcessor(config.anyway)
+    for (const key in this.#processors) {
+      const k = key as keyof TProcessorNames
+      if (config[k] instanceof Function) {
+        this.#processors[k].push(config[k] as any)
+        // if it is loading processor, execute it first
+        k === 'loading' && (config[k]!)(true)
+      }
+    }
   }
 
   chain () {
     const chain: IProcessorsChain<Payload, OriginResult, FinalResult> = {
-      loading: (arg: TLoading) => {
-        this.addLoadingProcessor(arg)
+      loading: (fn: TLoading) => {
+        this.#processors.loading.push(fn)
         return chain
       },
       success: (fn: TSuccess<FinalResult>) => {
-        this.addSuccessProcessor(fn)
+        this.#processors.success.push(fn)
         return chain
       },
       error: (fn: TRequestError<Payload, OriginResult>) => {
-        this.addRequestErrorProcessor(fn)
+        this.#processors.error.push(fn)
         return chain
       },
       bizError: (fn: TBizError<OriginResult>) => {
-        this.addBizErrorProcessor(fn)
+        this.#processors.bizError.push(fn)
         return chain
       },
       anyway: (fn: TAnyway) => {
-        this.addAnywayProcessor(fn)
+        this.#processors.anyway.push(fn)
         return chain
       }
     }

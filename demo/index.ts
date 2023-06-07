@@ -248,7 +248,7 @@ function sendRequest () {
     })
   toPromise(getError())
     .then(res => console.log('to promise res', res))
-    .catch(error => console.log('to promise error', error))
+    .catch(error => console.log('to promise error: ', error))
 }
 
 window.addEventListener('load', () => {
