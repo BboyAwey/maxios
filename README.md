@@ -60,7 +60,7 @@ const request = modulize({
 })
 
 // modulize your apis as an object
-export default Object.frees({
+export default Object.freeze({
   getUsers (condition: Patial<UserInfo>) {
     return request<void, ResponseData<User[]>>({
       axiosConfig: {
