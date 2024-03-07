@@ -62,6 +62,7 @@ export class Maxios<
       // send request
       request<OriginResult, AxiosResponse<OriginResult, Payload>, Payload>(axiosConfig)
         .then(res => {
+          console.log('--request success, execute loading success', res)
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
             if (!res) return

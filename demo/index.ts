@@ -202,53 +202,59 @@ function sendRequest () {
   //   console.log(err, '--http err from request')
   //   return true
   // })
-  // apis.getShit()
-  //   .success(() => {
-  //     console.log('success from request')
-  //   })
-  //   .anyway(() => {
-  //     console.log('anyway from request')
-  //   })
+  apis.getShit()
+    .loading((status) => {
+      console.log(status, '---loading from request')
+    })
+    .success(() => {
+      console.log('success from request')
+    })
+    .anyway(() => {
+      console.log('anyway from request')
+    })
   // errorApis.getBizError({ a: 2 })
 
-  race<{ shit: 1 }>([
-    apis.getShit(),
-    apis.getShit(),
-    errorApis.getBizError({ a: 2 })
-  ])
-    .anyway(() => {
-      console.log('---race anyway')
-    })
-    .success((res) => {
-      console.log('---race success', res)
-    })
-    .error(err => {
-      console.log('---race err', err)
-    })
-    .bizError(err => {
-      console.log('---race biz err', err)
-    })
+  // race<{ shit: 1 }>([
+  //   apis.getShit(),
+  //   apis.getShit(),
+  //   errorApis.getBizError({ a: 2 })
+  // ])
+  //   .anyway(() => {
+  //     console.log('---race anyway')
+  //   })
+  //   .success((res) => {
+  //     console.log('---race success', res)
+  //   })
+  //   .error(err => {
+  //     console.log('---race err', err)
+  //   })
+  //   .bizError(err => {
+  //     console.log('---race biz err', err)
+  //   })
+  //   .loading(loading => {
+  //     console.log('---race loading', loading)
+  //   })
   
-  all<[{ shit: number }, { shit: 1 }]>([
-    apis.getShit(),
-    apis.getShit(),
-    // errorApis.getBizError({ a: 2 })
-  ])
-    .anyway(() => {
-      console.log('---all anyway')
-    })
-    .success((res) => {
-      console.log('---all success', res)
-    })
-    .error(err => {
-      console.log('---all err', err)
-    })
-    .bizError(err => {
-      console.log('---all biz err', err)
-    })
-  toPromise(getError())
-    .then(res => console.log('to promise res', res))
-    .catch(error => console.log('to promise error: ', error))
+  // all<[{ shit: number }, { shit: 1 }]>([
+  //   apis.getShit(),
+  //   apis.getShit(),
+  //   // errorApis.getBizError({ a: 2 })
+  // ])
+  //   .anyway(() => {
+  //     console.log('---all anyway')
+  //   })
+  //   .success((res) => {
+  //     console.log('---all success', res)
+  //   })
+  //   .error(err => {
+  //     console.log('---all err', err)
+  //   })
+  //   .bizError(err => {
+  //     console.log('---all biz err', err)
+  //   })
+  // toPromise(getError())
+  //   .then(res => console.log('to promise res', res))
+  //   .catch(error => console.log('to promise error: ', error))
 }
 
 window.addEventListener('load', () => {

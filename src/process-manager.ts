@@ -82,6 +82,8 @@ class ProcessorManager<
   chain () {
     const chain: IProcessorsChain<Payload, OriginResult, FinalResult> = {
       loading: (fn: TLoading) => {
+        // execute loading processor first
+        fn(true)
         this.#processors.loading.push(fn)
         return chain
       },
