@@ -236,4 +236,3 @@ toPromise(userModel.getUsers({ gender: 'female' }))
 * `modulize(config: IMaxiosConfig | () => IMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
 * `race(requests: IProcessChain[]) => IProcessChain`: a function that can race all giving requests and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
 * `all(requests: IProcessChain[]) => IProcessChain`: a function that can get all giving requests's result and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
-* `Maxios.cancelActiveRequests() => void`: a function that used to cancel all active requests

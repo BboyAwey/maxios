@@ -107,8 +107,4 @@ export class Maxios<
 
     return this.#processorManager.chain()
   }
-
-  static cancelActiveRequests () {
-    ConfigManager.source.cancel()
-  }
 }
