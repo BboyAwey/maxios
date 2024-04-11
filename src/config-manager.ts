@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios'
+import { AxiosRequestConfig } from 'axios'
 import { IMaxiosConfig, TNearestCallbackName } from './interfaces'
 import { IMaxiosConstructorConfig } from './maxios'
 import { pathJoin } from './utils'
