@@ -40,7 +40,6 @@ export interface IMaxiosConfig<
     type: TCacheType
     key: string
   }
-  cancelable?: boolean
   // processors 
   loading?: TLoading
   error?: TRequestError<Payload, OriginResult>

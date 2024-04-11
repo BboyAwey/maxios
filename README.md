@@ -135,7 +135,6 @@ interface IMaxiosConfig {
     type: TCacheType
     key: string
   }
-  cancelable?: boolean
   loading?: TLoading
   error?: TRequestError<Payload, OriginResult>
   bizError?: TBizError<OriginResult>
@@ -151,7 +150,6 @@ interface IMaxiosConfig {
 * `cache`: specifies should maxios use caching for the response data
   * `cache.type`: specifies which type of caching should maxios use to store the response data. It should be one of the `memory`, `session`(session storage) or `local`(local storage)
   * `cache.key`: a key which is used to store the response data in cache
-* `cancelable`: indicate if this fetch can be canceled. If `true` then this fetch will be canceled by `maxios.cancelActiveRequests()`
 * `loading`: a callback function which will be executed when fetch loading status changed. It recieves an argument `status` to indecate if it is loading right now
 * `error`: a callback function which will be executed when response status code is not right. It recieves an argument `axiosError`. And it can return `true` to use next `error` callbacks from upper layers
 * `bizError`: a callback function which will be executed when `indicator` returns false. It recieves an argument `data` as the origin response data. And it can return `true` to executed next `bizError` callbacks from upper layers
@@ -174,7 +172,6 @@ In general, lower-level configurations take precedence over higher-level configu
 * `axiosConfig.headers`: `headers` object will merge from low-level into high level. The final headers object is just like the result of `Object.assign({}, globalConfig.axiosConfig.headers, moduleConfig.axiosConfig.headers, apiConfig.axiosConfig.headers)`
 * `axiosConfig.params`: `params` object will merge from low-level into high level, the final params object is just like the result of `Object.assign({}, globalConfig.axiosConfig.params, moduleConfig.axiosConfig.params, apiConfig.axiosConfig.params)`
 * `axiosConfig.data`: the `data` property in axios config could be string, plain object, ArrayBuffer, ArrayBufferView, URLSearchParams, FormData, File, Blob, Stream or Buffer. Maxios will merge it from low-level to high level only when they are all **plain objects**, otherwise the high-level data will be replaced by the low-level data.
-* `cancelable`: if there's any `cancelable` is `true` in config from any level, then this request could be canceled by `Maxios.cancelActiveRequests()`
 * `loading`: all loading callbacks will executed from high level to low level(executing order is not that important).
 * `error`: error callbacks will executed from low level to high level. And if any of the callbacks do not return `true`, then the upper level callbacks will not be executed.
 * `bizError`: bizError callbacks will executed from low level to high level. And if any of the callbacks do not return `true`, then the upper level callbacks will not be executed.

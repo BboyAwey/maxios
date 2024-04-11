@@ -8,8 +8,6 @@ class ConfigManager<
   OriginResult = any,
   FinalResult = OriginResult
 > {
-  static source = axios.CancelToken.source()
-
   static globalConfig: IMaxiosConfig | (() => IMaxiosConfig) = {}
 
   static getGlobalConfig = (): IMaxiosConfig => {
@@ -102,14 +100,6 @@ class ConfigManager<
     }
 
     axiosConfig.data = finalData
-
-    if (
-      ConfigManager.getGlobalConfig().cancelable !== false &&
-      this.moduleConfig.cancelable !== false &&
-      this.apiConfig.cancelable !== false
-    ) {
-      axiosConfig.cancelToken = ConfigManager.source.token
-    }
 
     return axiosConfig
   }
