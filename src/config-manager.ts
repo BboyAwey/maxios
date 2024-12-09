@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios'
-import { IMaxiosConfig, TNearestCallbackName } from './interfaces'
+import { IMaxiosInnerConfig, TMaxiosConfig, TNearestCallbackName } from './interfaces'
 import { IMaxiosConstructorConfig } from './maxios'
 import { pathJoin } from './utils'
 
@@ -8,19 +8,19 @@ class ConfigManager<
   OriginResult = any,
   FinalResult = OriginResult
 > {
-  static globalConfig: IMaxiosConfig | (() => IMaxiosConfig) = {}
+  static globalConfig: IMaxiosInnerConfig | (() => IMaxiosInnerConfig) = {}
 
-  static getGlobalConfig = (): IMaxiosConfig => {
+  static getGlobalConfig = (): IMaxiosInnerConfig => {
     if (ConfigManager.globalConfig instanceof Function) {
       return ConfigManager.globalConfig()
     } else return ConfigManager.globalConfig
   }
 
 
-  #originModuleConfig: IMaxiosConfig | (() => IMaxiosConfig)
-  #originApiConfig: IMaxiosConfig<Payload, OriginResult, FinalResult> | (() => IMaxiosConfig<Payload, OriginResult, FinalResult>)
+  #originModuleConfig: IMaxiosInnerConfig | (() => IMaxiosInnerConfig)
+  #originApiConfig: IMaxiosInnerConfig<Payload, OriginResult, FinalResult> | (() => IMaxiosInnerConfig<Payload, OriginResult, FinalResult>)
 
-  get moduleConfig (): IMaxiosConfig {
+  get moduleConfig (): IMaxiosInnerConfig {
     if (this.#originModuleConfig instanceof Function) {
       return this.#originModuleConfig()
     } else {
@@ -28,7 +28,7 @@ class ConfigManager<
     }
   }
 
-  get apiConfig (): IMaxiosConfig<Payload, OriginResult, FinalResult> {
+  get apiConfig (): IMaxiosInnerConfig<Payload, OriginResult, FinalResult> {
     if (this.#originApiConfig instanceof Function) {
       return this.#originApiConfig()
     } else return this.#originApiConfig

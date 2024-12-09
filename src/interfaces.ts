@@ -27,7 +27,7 @@ export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: Axi
 
 export type TNearestCallbackName = 'extractor' | 'indicator' | 'request'
 
-export interface IMaxiosConfig<
+export interface IMaxiosInnerConfig<
   Payload = any,
   OriginResult = any,
   FinalResult = OriginResult
@@ -47,3 +47,11 @@ export interface IMaxiosConfig<
   success?: TSuccess<FinalResult>
   anyway?: TAnyway
 }
+
+export type TMaxiosConfig<
+Payload = any,
+OriginResult = any,
+FinalResult = OriginResult
+> = Omit<IMaxiosInnerConfig<Payload, OriginResult, FinalResult>, 'axiosConfig'>
+
+export type TAxiosConfig<Payload> = IMaxiosInnerConfig<Payload>['axiosConfig']

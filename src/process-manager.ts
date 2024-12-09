@@ -1,6 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios'
 import {
-  IMaxiosConfig,
+  IMaxiosInnerConfig,
   IProcessorsChain,
   TAnyway,
   TBizError,
@@ -68,7 +68,7 @@ class ProcessorManager<
     })
   }
 
-  loadProcessorFromMaxiosConfig (config: IMaxiosConfig) {
+  loadProcessorFromMaxiosConfig (config: IMaxiosInnerConfig) {
     for (const key in this.#processors) {
       const k = key as keyof TProcessorNames
       if (config[k] instanceof Function) {
