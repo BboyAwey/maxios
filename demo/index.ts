@@ -34,7 +34,7 @@ global<Response<unknown>>(
     bizError (data) {
       console.log(data, '---biz error from global')
     },
-    error (err) {
+    statusError (err) {
       console.log(err)
     },
     success () {
@@ -72,7 +72,7 @@ const request = modulize(
     }
   }),
   () => ({
-    error (error) {
+    statusError (error) {
       console.log('module error', error)
     },
     bizError (data: any) {
@@ -159,7 +159,7 @@ const getError = () => {
   return request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
     url: '/error'
   }, {
-    error (error) {
+    statusError (error) {
       console.log('request error', error)
       return true
     }
@@ -197,7 +197,7 @@ function sendRequest () {
     .success((res) => {
       console.log('---race success', res)
     })
-    .error(err => {
+    .statusError(err => {
       console.log('---race err', err)
     })
     .bizError(err => {
@@ -218,7 +218,7 @@ function sendRequest () {
     .success((res) => {
       console.log('---all success', res)
     })
-    .error(err => {
+    .statusError(err => {
       console.log('---all err', err)
     })
     .bizError(err => {

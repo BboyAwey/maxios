@@ -14,7 +14,7 @@ export type TProcessorNames = Partial<Record<
 export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: (fn: TLoading) => IProcessorsChain<Payload, OriginResult, FinalResult>
   success: (fn: TSuccess<FinalResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
-  error: (fn: TRequestError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  statusError: (fn: TRequestError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   bizError: (fn: TBizError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
@@ -42,7 +42,7 @@ export interface IMaxiosInnerConfig<
   }
   // processors 
   loading?: TLoading
-  error?: TRequestError<Payload, OriginResult>
+  statusError?: TRequestError<Payload, OriginResult>
   bizError?: TBizError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway

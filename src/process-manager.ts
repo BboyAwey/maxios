@@ -12,7 +12,7 @@ import {
 
 interface IProcessorSets<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: TLoading[]
-  error: TRequestError<Payload, OriginResult>[],
+  statusError: TRequestError<Payload, OriginResult>[],
   bizError: TBizError<OriginResult>[]
   success: TSuccess<FinalResult>[]
   anyway: TAnyway[]
@@ -25,7 +25,7 @@ class ProcessorManager<
 > {
   #processors: IProcessorSets<Payload, OriginResult, FinalResult> = {
     loading: [],
-    error: [],
+    statusError: [],
     bizError: [],
     success: [],
     anyway: []
@@ -39,7 +39,7 @@ class ProcessorManager<
   }
 
   executeRequestErrorProcessors (err: AxiosError<OriginResult, Payload>) {
-    const processors = [...this.#processors.error].reverse()
+    const processors = [...this.#processors.statusError].reverse()
     for (const fn of processors) {
       try {
         if (!fn(err)) break
@@ -91,8 +91,8 @@ class ProcessorManager<
         this.#processors.success.push(fn)
         return chain
       },
-      error: (fn: TRequestError<Payload, OriginResult>) => {
-        this.#processors.error.push(fn)
+      statusError: (fn: TRequestError<Payload, OriginResult>) => {
+        this.#processors.statusError.push(fn)
         return chain
       },
       bizError: (fn: TBizError<OriginResult>) => {
