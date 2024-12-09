@@ -64,10 +64,10 @@ export const race = <Result = any>(
     })
 
     req.error((err) => {
-      pm.executeBizErrorProcessors(err)
+      pm.executeErrorProcessors(err)
     })
     req.statusError((err) => {
-      pm.executeRequestErrorProcessors(err)
+      pm.executeStatusErrorProcessors(err)
     })
   })
 
@@ -100,10 +100,10 @@ export const all = <Result = any[]>(
     })
 
     req.error((err) => {
-      pm.executeBizErrorProcessors(err)
+      pm.executeErrorProcessors(err)
     })
     req.statusError((err) => {
-      pm.executeRequestErrorProcessors(err)
+      pm.executeStatusErrorProcessors(err)
     })
   })
 

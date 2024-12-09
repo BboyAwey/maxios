@@ -19,13 +19,13 @@ export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TP
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
 
-export type TIndicator<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
+export type TIsError<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
 
 export type TExtractor<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => unknown
 
 export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosRequestConfig<D>) => Promise<R>
 
-export type TNearestCallbackName = 'extractor' | 'indicator' | 'request'
+export type TNearestCallbackName = 'extractor' | 'isError' | 'request'
 
 export interface IMaxiosInnerConfig<
   Payload = any,
@@ -33,7 +33,7 @@ export interface IMaxiosInnerConfig<
   FinalResult = OriginResult
 > extends TProcessorNames, Partial<Record<TNearestCallbackName, any>> {
   axiosConfig?: AxiosRequestConfig<Payload>
-  indicator?: TIndicator<Payload, OriginResult>
+  isError?: TIsError<Payload, OriginResult>
   extractor?: TExtractor<Payload, OriginResult>
   request?: TRequest
   cache?: {
