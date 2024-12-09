@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios'
-import { IMaxiosInnerConfig, TMaxiosConfig, TNearestCallbackName } from './interfaces'
+import { IMaxiosInnerConfig, TNearestCallbackName } from './interfaces'
 import { IMaxiosConstructorConfig } from './maxios'
 import { pathJoin } from './utils'
 
@@ -57,7 +57,7 @@ class ConfigManager<
       ConfigManager.getGlobalConfig().cache
   }
 
-  getAxiosConfig () {
+  getFinalAxiosConfig () {
     const axiosConfig: AxiosRequestConfig = {
       ...ConfigManager.getGlobalConfig().axiosConfig,
       ...this.moduleConfig.axiosConfig,

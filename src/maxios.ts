@@ -42,7 +42,7 @@ export class Maxios<
   }
 
   request () {
-    const axiosConfig = this.#configManager.getAxiosConfig()
+    const axiosConfig = this.#configManager.getFinalAxiosConfig()
     const cacheConfig = this.#configManager.getNearestCacheConfig()
     const request = this.#configManager.getNearestCallback('request', axios.request) as TRequest
 
@@ -51,10 +51,11 @@ export class Maxios<
       nextTick(() => {
         this.#processorManager.executeLoadingProcessors()
         nextTick(() => {
-          this.#processorManager.executeSuccessProcessors(daches[cacheConfig.type].get(cacheConfig.key)!)
+          const result = daches[cacheConfig.type].get(cacheConfig.key)!
+          this.#processorManager.executeSuccessProcessors(result)
           nextTick(() => {
             // make sure anyway processor is been executed after any other processors
-            this.#processorManager.executeAnywayProcessors()
+            this.#processorManager.executeAnywayProcessors(result, axiosConfig)
           })
         })
       })
@@ -64,7 +65,10 @@ export class Maxios<
         .then(res => {
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
-            if (!res) return
+            if (!res) {
+              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
+              return
+            }
             // use isError indicator
             const hasError = this.#configManager.getNearestCallback('isError', () => false)(res)
             if (!hasError) {
@@ -77,6 +81,7 @@ export class Maxios<
 
               extractRes = extractor(res)
               this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
+              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
 
               // cache result
               if (cacheConfig) {
@@ -84,11 +89,8 @@ export class Maxios<
               }
             } else {
               this.#processorManager.executeErrorProcessors(res)
+              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
             }
-            nextTick(() => {
-              // make sure anyway processor is been executed after any other processors
-              this.#processorManager.executeAnywayProcessors()
-            })
           })
         })
         .catch(err => {
@@ -99,7 +101,7 @@ export class Maxios<
             this.#processorManager.executeStatusErrorProcessors(err)
             nextTick(() => {
               // make sure anyway processor is been executed after any other processors
-              this.#processorManager.executeAnywayProcessors()
+              this.#processorManager.executeAnywayProcessors(err, axiosConfig)
             })
           })
         })

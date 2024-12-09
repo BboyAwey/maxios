@@ -1,4 +1,4 @@
-import { AxiosError, AxiosResponse } from 'axios'
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import {
   IMaxiosInnerConfig,
   IProcessorsChain,
@@ -62,9 +62,9 @@ class ProcessorManager<
     })
   }
 
-  executeAnywayProcessors () {
+  executeAnywayProcessors (res?: AxiosResponse | AxiosError, axiosConfig?: AxiosRequestConfig<Payload>) {
     this.#processors.anyway.forEach(fn => {
-      try { fn() } catch (err) { console.warn(err) }
+      try { fn(res, axiosConfig) } catch (err) { console.warn(err) }
     })
   }
 

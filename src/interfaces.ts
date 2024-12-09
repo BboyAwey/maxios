@@ -5,7 +5,7 @@ export type TLoading = (status: boolean) => void
 export type TStatusError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
 export type TError<Result> = (data: Result) => void | boolean
 export type TSuccess<Result> = (data: Result) => void
-export type TAnyway = () => void
+export type TAnyway = (result?: AxiosResponse | AxiosError, config?: AxiosRequestConfig) => void
 
 export type TProcessorNames = Partial<Record<
   'loading' | 'error' | 'bizError' | 'success' | 'anyway',

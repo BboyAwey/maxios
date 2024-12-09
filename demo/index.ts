@@ -1,5 +1,5 @@
 // import { AxiosResponse } from 'axios'
-import { all, global, modulize, race, toPromise } from '../src'
+import { all, globalConfig, modulize, race, toPromise } from '../src'
 
 interface Response<T> {
   code: number
@@ -7,7 +7,7 @@ interface Response<T> {
   msg: string
 }
 
-global({
+globalConfig({
   baseURL: 'http://localhost:3000'
 })
 
@@ -17,7 +17,7 @@ setInterval(() => {
   num = Math.round(Math.random() * 1000)
 }, 1000)
 
-global<Response<unknown>>(
+globalConfig<Response<unknown>>(
   {
     baseURL: '/api',
     headers: {
@@ -32,10 +32,10 @@ global<Response<unknown>>(
       return response.data.data
     },
     error (data) {
-      console.log(data, '---biz error from global')
+      console.log(data, '-- error from global')
     },
     statusError (err) {
-      console.log(err)
+      console.log(err, '-- status error')
     },
     success () {
       console.log('success from global')
@@ -73,10 +73,10 @@ const request = modulize(
   }),
   () => ({
     statusError (error) {
-      console.log('module error', error)
+      console.log(error, '-- module status error')
     },
     error (data: any) {
-      console.log(data, '--biz error from module')
+      console.log(data, '-- error from module')
       return true
     },
     success () {
@@ -127,7 +127,7 @@ const errorApis = {
       }
     }, {
       error (data) {
-        console.log(data, '--biz error from api')
+        console.log(data, '-- error from api')
         return true
       },
       cache: {
@@ -142,7 +142,7 @@ const errorApis = {
       params: query
     }, {
       error (data) {
-        console.log(data, '--biz error from api')
+        console.log(data, '-- error from api')
         return true
       }
     })
@@ -160,7 +160,7 @@ const getError = () => {
     url: '/error'
   }, {
     statusError (error) {
-      console.log('request error', error)
+      console.log(error, 'api status error')
       return true
     }
   })
