@@ -25,7 +25,7 @@ global<Response<unknown>>(
     }
   },
   {
-    indicator (response) {
+    isError (response) {
       return response.data.code !== 1
     },
     extractor (response) {

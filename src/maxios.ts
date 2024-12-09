@@ -65,9 +65,9 @@ export class Maxios<
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
             if (!res) return
-            // use indicator
-            const hasBizError = !this.#configManager.getNearestCallback('indicator', () => true)(res)
-            if (!hasBizError) {
+            // use isError indicator
+            const hasError = this.#configManager.getNearestCallback('isError', () => false)(res)
+            if (!hasError) {
               // use extractor
               const extractor = this.#configManager.getNearestCallback(
                 'extractor',
@@ -83,7 +83,7 @@ export class Maxios<
                 daches[cacheConfig.type].set(cacheConfig.key, extractRes)
               }
             } else {
-              this.#processorManager.executeBizErrorProcessors(res)
+              this.#processorManager.executeErrorProcessors(res)
             }
             nextTick(() => {
               // make sure anyway processor is been executed after any other processors
@@ -96,7 +96,7 @@ export class Maxios<
           if (axios.isCancel(err)) return
           
           nextTick(() => {
-            this.#processorManager.executeRequestErrorProcessors(err)
+            this.#processorManager.executeStatusErrorProcessors(err)
             nextTick(() => {
               // make sure anyway processor is been executed after any other processors
               this.#processorManager.executeAnywayProcessors()

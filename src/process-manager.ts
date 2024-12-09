@@ -38,7 +38,7 @@ class ProcessorManager<
     })
   }
 
-  executeRequestErrorProcessors (err: AxiosError<OriginResult, Payload>) {
+  executeStatusErrorProcessors (err: AxiosError<OriginResult, Payload>) {
     const processors = [...this.#processors.statusError].reverse()
     for (const fn of processors) {
       try {
@@ -47,7 +47,7 @@ class ProcessorManager<
     }
   }
 
-  executeBizErrorProcessors (response: AxiosResponse<OriginResult, Payload>) {
+  executeErrorProcessors (response: AxiosResponse<OriginResult, Payload>) {
     const processors = [...this.#processors.error].reverse()
     for (const fn of processors) {
       try {
