@@ -66,7 +66,7 @@ export const race = <Result = any>(
     req.bizError((err) => {
       pm.executeBizErrorProcessors(err)
     })
-    req.error((err) => {
+    req.statusError((err) => {
       pm.executeRequestErrorProcessors(err)
     })
   })
@@ -102,7 +102,7 @@ export const all = <Result = any[]>(
     req.bizError((err) => {
       pm.executeBizErrorProcessors(err)
     })
-    req.error((err) => {
+    req.statusError((err) => {
       pm.executeRequestErrorProcessors(err)
     })
   })
@@ -116,7 +116,7 @@ export const toPromise = <Payload = any, OriginResult = any, FinalResult = Origi
   return new Promise<FinalResult>((resolve, reject) => {
     request
       .success(res => resolve(res))
-      .error(error => {
+      .statusError(error => {
         reject(new Error(error.message, error.cause))
         return true
       })
