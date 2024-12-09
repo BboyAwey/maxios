@@ -1,27 +1,41 @@
 import ConfigManager from './config-manager'
-import { IMaxiosConfig, IProcessorsChain } from './interfaces'
+import { IProcessorsChain, TAxiosConfig, TMaxiosConfig } from './interfaces'
 import { Maxios } from './maxios'
 import ProcessorManager from './process-manager'
 
+const getExactConfig = <T> (config: T | (() => T)) => {
+  return config instanceof Function? config() : config
+}
+
 export const global = <OriginResult = any> (
-  config: IMaxiosConfig<unknown, OriginResult> | (() => IMaxiosConfig<unknown, OriginResult>)
+  globalAxiosConfig?: TAxiosConfig<unknown> | (() => TAxiosConfig<unknown>),
+  globalMaxiosConfig?: TMaxiosConfig<unknown, OriginResult> | (() => TMaxiosConfig<unknown, OriginResult>)
 ) => {
-  ConfigManager.globalConfig = config
+  ConfigManager.globalConfig = () => ({
+    axiosConfig: getExactConfig(globalAxiosConfig),
+    ...getExactConfig(globalMaxiosConfig)
+  })
 }
 
 export const modulize = <OriginResult = any> (
-  config: IMaxiosConfig<unknown, OriginResult> | (() => IMaxiosConfig<unknown, OriginResult>) = {}
-): (<
-  Payload = any,
-  OriginResult = any,
-  FinalResult = OriginResult
-> (
-  apiConfig?: IMaxiosConfig<Payload, OriginResult, FinalResult> | (() => IMaxiosConfig<Payload, OriginResult, FinalResult>)
-) => IProcessorsChain<Payload, OriginResult, FinalResult>) => {
-  return (apiConfig) => {
+  moduleAxiosConfig?: TAxiosConfig<unknown> | (() => TAxiosConfig<unknown>),
+  moduleMaxiosConfig?: TMaxiosConfig<unknown, OriginResult> | (() => TMaxiosConfig<unknown, OriginResult>)
+): (
+  <Payload = any, OriginResult = any, FinalResult = OriginResult> (
+    axiosConfig?: TAxiosConfig<Payload> | (() => TAxiosConfig<Payload>),
+    maxiosConfig?: TMaxiosConfig<Payload, OriginResult, FinalResult> | (() => TMaxiosConfig<Payload, OriginResult, FinalResult>)
+  ) => IProcessorsChain<Payload, OriginResult, FinalResult>
+) => {
+  return (apiAxiosConfig, apiMaxiosConfig) => {
     return new Maxios({
-      moduleConfig: config,
-      apiConfig: apiConfig || {}
+      moduleConfig: () => ({
+        axiosConfig: getExactConfig(moduleAxiosConfig),
+        ...getExactConfig(moduleMaxiosConfig)
+      }),
+      apiConfig: () => ({
+        axiosConfig: getExactConfig(apiAxiosConfig),
+        ...getExactConfig(apiMaxiosConfig)
+      })
     }).request()
   }
 }

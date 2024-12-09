@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios'
 import Dache, { TCacheType } from '@awey/dache'
 import { nextTick } from './utils'
 import {
-  IMaxiosConfig,
+  IMaxiosInnerConfig,
   TRequest
 } from './interfaces'
 import ProcessorManager from './process-manager'
@@ -13,8 +13,8 @@ export interface IMaxiosConstructorConfig <
   OriginResult = any,
   FinalResult = OriginResult
 > {
-  moduleConfig: IMaxiosConfig | (() => IMaxiosConfig)
-  apiConfig: IMaxiosConfig<Payload, OriginResult, FinalResult> | (() => IMaxiosConfig<Payload, OriginResult, FinalResult>)
+  moduleConfig: IMaxiosInnerConfig | (() => IMaxiosInnerConfig)
+  apiConfig: IMaxiosInnerConfig<Payload, OriginResult, FinalResult> | (() => IMaxiosInnerConfig<Payload, OriginResult, FinalResult>)
 }
 
 const daches: Record<TCacheType, Dache> = {

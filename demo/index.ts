@@ -8,9 +8,7 @@ interface Response<T> {
 }
 
 global({
-  axiosConfig: {
-    baseURL: 'http://localhost:3000'
-  }
+  baseURL: 'http://localhost:3000'
 })
 
 let num = 0
@@ -19,32 +17,34 @@ setInterval(() => {
   num = Math.round(Math.random() * 1000)
 }, 1000)
 
-global<Response<unknown>>({
-  axiosConfig: {
+global<Response<unknown>>(
+  {
     baseURL: '/api',
     headers: {
       XXXXGLOBAL: num + ''
     }
   },
-  indicator (response) {
-    return response.data.code !== 1
-  },
-  extractor (response) {
-    return response.data.data
-  },
-  bizError (data) {
-    console.log(data, '---biz error from global')
-  },
-  error (err) {
-    console.log(err)
-  },
-  success () {
-    console.log('success from global')
-  },
-  anyway () {
-    console.log('anyway from global')
+  {
+    indicator (response) {
+      return response.data.code !== 1
+    },
+    extractor (response) {
+      return response.data.data
+    },
+    bizError (data) {
+      console.log(data, '---biz error from global')
+    },
+    error (err) {
+      console.log(err)
+    },
+    success () {
+      console.log('success from global')
+    },
+    anyway () {
+      console.log('anyway from global')
+    }
   }
-})
+)
 
 // const getShitRequest = modulize()
 
@@ -65,52 +65,28 @@ global<Response<unknown>>({
 // setInterval(() => {
 //   getShit()
 // }, 2000)
-
-const request = modulize(() => ({
-  axiosConfig: {
+const request = modulize(
+  () => ({
     headers: {
-      XXXXMODULE: num + ''
+      XXXX_MODULE: num + ''
     }
-  },
-  error (error) {
-    console.log('module error', error)
-  },
-  bizError (data: any) {
-    console.log(data, '--biz error from module')
-    return true
-  },
-  success () {
-    console.log('success from module')
-  },
-  anyway () {
-    console.log('anyway from module')
-  }
-  // indicator (response) {
-  //   return response.data.code === 0
-  // }
-  // request (config: AxiosRequestConfig) {
-  //   // return axios.request(config)
-  //   return new Promise((resolve, reject) => {
-  //     let count = 3
-
-  //     const timer = setInterval(() => {
-  //       console.log('---' + count + '---' + new Date().getTime())
-  //       count--
-
-  //       if (count === 0) {
-  //         if (count) return
-  //         const flag = Math.random()
-  //         if (flag < 0.5) {
-  //           reject(new Error('fuck me'))
-  //         } else {
-  //           resolve(axios.request(config))
-  //         }
-  //         clearInterval(timer)
-  //       }
-  //     }, 3000)
-  //   })
-  // }
-}))
+  }),
+  () => ({
+    error (error) {
+      console.log('module error', error)
+    },
+    bizError (data: any) {
+      console.log(data, '--biz error from module')
+      return true
+    },
+    success () {
+      console.log('success from module')
+    },
+    anyway () {
+      console.log('anyway from module')
+    }
+  })
+)
 
 // request<{ a: number }, string>({
 //   axiosConfig: {
@@ -129,9 +105,8 @@ const request = modulize(() => ({
 const apis = {
   getShit () {
     return request({
-      axiosConfig: {
-        url: '/get-shit'
-      },
+      url: '/get-shit'
+    }, {
       success () {
         console.log('success from api')
       },
@@ -145,13 +120,12 @@ const apis = {
 const errorApis = {
   getBizError (query: { a: number }) {
     return request<{ a: number }, string>({
-      axiosConfig: {
-        url: '/biz-error-shit',
-        params: query,
-        headers: {
-          XXXXAPI: num + ''
-        }
-      },
+      url: '/biz-error-shit',
+      params: query,
+      headers: {
+        XXXXAPI: num + ''
+      }
+    }, {
       bizError (data) {
         console.log(data, '--biz error from api')
         return true
@@ -164,10 +138,9 @@ const errorApis = {
   },
   getBizError2 (query: { a: number }) {
     return request<{ a: number }, string>({
-      axiosConfig: {
-        url: '/biz-error-shit',
-        params: query
-      },
+      url: '/biz-error-shit',
+      params: query
+    }, {
       bizError (data) {
         console.log(data, '--biz error from api')
         return true
@@ -184,9 +157,8 @@ const errorApis = {
 
 const getError = () => {
   return request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
-    axiosConfig: {
-      url: '/error'
-    },
+    url: '/error'
+  }, {
     error (error) {
       console.log('request error', error)
       return true
