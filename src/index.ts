@@ -63,7 +63,7 @@ export const race = <Result = any>(
       }
     })
 
-    req.bizError((err) => {
+    req.error((err) => {
       pm.executeBizErrorProcessors(err)
     })
     req.statusError((err) => {
@@ -99,7 +99,7 @@ export const all = <Result = any[]>(
       }
     })
 
-    req.bizError((err) => {
+    req.error((err) => {
       pm.executeBizErrorProcessors(err)
     })
     req.statusError((err) => {
@@ -120,7 +120,7 @@ export const toPromise = <Payload = any, OriginResult = any, FinalResult = Origi
         reject(new Error(error.message, error.cause))
         return true
       })
-      .bizError(res => {
+      .error(res => {
         reject(new Error(JSON.stringify(res)))
         return true
       })

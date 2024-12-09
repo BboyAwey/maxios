@@ -2,8 +2,8 @@ import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { TCacheType } from '@awey/dache'
 
 export type TLoading = (status: boolean) => void
-export type TRequestError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
-export type TBizError<Result> = (data: Result) => void | boolean
+export type TStatusError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
+export type TError<Result> = (data: Result) => void | boolean
 export type TSuccess<Result> = (data: Result) => void
 export type TAnyway = () => void
 
@@ -14,8 +14,8 @@ export type TProcessorNames = Partial<Record<
 export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: (fn: TLoading) => IProcessorsChain<Payload, OriginResult, FinalResult>
   success: (fn: TSuccess<FinalResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
-  statusError: (fn: TRequestError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
-  bizError: (fn: TBizError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  statusError: (fn: TStatusError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  error: (fn: TError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
 
@@ -42,8 +42,8 @@ export interface IMaxiosInnerConfig<
   }
   // processors 
   loading?: TLoading
-  statusError?: TRequestError<Payload, OriginResult>
-  bizError?: TBizError<OriginResult>
+  statusError?: TStatusError<Payload, OriginResult>
+  error?: TError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway
 }
