@@ -7,7 +7,7 @@ const getExactConfig = <T> (config: T | (() => T)) => {
   return config instanceof Function? config() : config
 }
 
-export const global = <OriginResult = any> (
+export const globalConfig = <OriginResult = any> (
   globalAxiosConfig?: TAxiosConfig<unknown> | (() => TAxiosConfig<unknown>),
   globalMaxiosConfig?: TMaxiosConfig<unknown, OriginResult> | (() => TMaxiosConfig<unknown, OriginResult>)
 ) => {
@@ -55,11 +55,11 @@ export const race = <Result = any>(
       }
     })
 
-    req.anyway(() => {
+    req.anyway((res, config) => {
       count -= 1
       if (!count) {
-        pm.executeAnywayProcessors()
         pm.executeLoadingProcessors()
+        pm.executeAnywayProcessors(res, config)
       }
     })
 
@@ -91,11 +91,11 @@ export const all = <Result = any[]>(
       }
     })
 
-    req.anyway(() => {
+    req.anyway((res, config) => {
       anywayCount -= 1
       if (!anywayCount) {
-        pm.executeAnywayProcessors()
         pm.executeLoadingProcessors()
+        pm.executeAnywayProcessors(res, config)
       }
     })
 
