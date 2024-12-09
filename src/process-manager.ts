@@ -3,17 +3,17 @@ import {
   IMaxiosInnerConfig,
   IProcessorsChain,
   TAnyway,
-  TBizError,
+  TError,
   TLoading,
   TProcessorNames,
-  TRequestError,
+  TStatusError,
   TSuccess
 } from './interfaces'
 
 interface IProcessorSets<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: TLoading[]
-  statusError: TRequestError<Payload, OriginResult>[],
-  bizError: TBizError<OriginResult>[]
+  statusError: TStatusError<Payload, OriginResult>[],
+  error: TError<OriginResult>[]
   success: TSuccess<FinalResult>[]
   anyway: TAnyway[]
 }
@@ -26,7 +26,7 @@ class ProcessorManager<
   #processors: IProcessorSets<Payload, OriginResult, FinalResult> = {
     loading: [],
     statusError: [],
-    bizError: [],
+    error: [],
     success: [],
     anyway: []
   }
@@ -48,7 +48,7 @@ class ProcessorManager<
   }
 
   executeBizErrorProcessors (response: AxiosResponse<OriginResult, Payload>) {
-    const processors = [...this.#processors.bizError].reverse()
+    const processors = [...this.#processors.error].reverse()
     for (const fn of processors) {
       try {
         if (!fn(response.data)) break
@@ -91,12 +91,12 @@ class ProcessorManager<
         this.#processors.success.push(fn)
         return chain
       },
-      statusError: (fn: TRequestError<Payload, OriginResult>) => {
+      statusError: (fn: TStatusError<Payload, OriginResult>) => {
         this.#processors.statusError.push(fn)
         return chain
       },
-      bizError: (fn: TBizError<OriginResult>) => {
-        this.#processors.bizError.push(fn)
+      error: (fn: TError<OriginResult>) => {
+        this.#processors.error.push(fn)
         return chain
       },
       anyway: (fn: TAnyway) => {

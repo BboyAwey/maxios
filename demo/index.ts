@@ -31,7 +31,7 @@ global<Response<unknown>>(
     extractor (response) {
       return response.data.data
     },
-    bizError (data) {
+    error (data) {
       console.log(data, '---biz error from global')
     },
     statusError (err) {
@@ -75,7 +75,7 @@ const request = modulize(
     statusError (error) {
       console.log('module error', error)
     },
-    bizError (data: any) {
+    error (data: any) {
       console.log(data, '--biz error from module')
       return true
     },
@@ -126,7 +126,7 @@ const errorApis = {
         XXXXAPI: num + ''
       }
     }, {
-      bizError (data) {
+      error (data) {
         console.log(data, '--biz error from api')
         return true
       },
@@ -141,7 +141,7 @@ const errorApis = {
       url: '/biz-error-shit',
       params: query
     }, {
-      bizError (data) {
+      error (data) {
         console.log(data, '--biz error from api')
         return true
       }
@@ -200,7 +200,7 @@ function sendRequest () {
     .statusError(err => {
       console.log('---race err', err)
     })
-    .bizError(err => {
+    .error(err => {
       console.log('---race biz err', err)
     })
     .loading(loading => {
@@ -221,7 +221,7 @@ function sendRequest () {
     .statusError(err => {
       console.log('---all err', err)
     })
-    .bizError(err => {
+    .error(err => {
       console.log('---all biz err', err)
     })
     .loading(loading => {
