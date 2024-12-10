@@ -7,6 +7,10 @@ import {
 } from './interfaces'
 import ProcessorManager from './process-manager'
 import ConfigManager from './config-manager'
+import { RetryQueue } from './retry'
+
+const processingMaxiosInstances: Set<Maxios> = new Set()
+const retryQueue = new RetryQueue()
 
 export interface IMaxiosConstructorConfig <
   Payload = any,
@@ -31,9 +35,16 @@ export class Maxios<
   #configManager: ConfigManager<Payload, OriginResult, FinalResult>
   #processorManager = new ProcessorManager<Payload, OriginResult, FinalResult>()
 
-  constructor (config: IMaxiosConstructorConfig<Payload, OriginResult, FinalResult>) {
+  isRetryInstance: boolean = false
+  module: string | number | undefined = undefined
+
+  constructor (
+    config: IMaxiosConstructorConfig<Payload, OriginResult, FinalResult>,
+    module?: string | number
+  ) {
     // save config
     this.#configManager = new ConfigManager<Payload, OriginResult, FinalResult>(config)
+    this.module = module
 
     // load processors
     this.#processorManager.loadProcessorFromMaxiosConfig(ConfigManager.getGlobalConfig())
@@ -43,6 +54,7 @@ export class Maxios<
 
   request () {
     const axiosConfig = this.#configManager.getFinalAxiosConfig()
+    const retryConfig = this.#configManager.getNearestRetryConfig()
     const cacheConfig = this.#configManager.getNearestCacheConfig()
     const request = this.#configManager.getNearestCallback('request', axios.request) as TRequest
 
@@ -60,6 +72,7 @@ export class Maxios<
         })
       })
     } else {
+      processingMaxiosInstances.add(this)
       // send request
       request<OriginResult, AxiosResponse<OriginResult, Payload>, Payload>(axiosConfig)
         .then(res => {
@@ -88,16 +101,23 @@ export class Maxios<
                 daches[cacheConfig.type].set(cacheConfig.key, extractRes)
               }
             } else {
-              this.#processorManager.executeErrorProcessors(res)
-              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
+              // retry when status error
+              if (retryConfig?.retry?.when.statusError) {
+                this.#startRetry('error')
+              } else {
+                this.#processorManager.executeErrorProcessors(res)
+                this.#processorManager.executeAnywayProcessors(res, axiosConfig)
+              }
             }
           })
         })
         .catch(err => {
+          // TODO: retry first
           this.#processorManager.executeLoadingProcessors()
           if (axios.isCancel(err)) return
           
           nextTick(() => {
+            this.#startRetry('statusError')
             this.#processorManager.executeStatusErrorProcessors(err)
             nextTick(() => {
               // make sure anyway processor is been executed after any other processors
@@ -105,8 +125,48 @@ export class Maxios<
             })
           })
         })
+        .finally(() => {
+          processingMaxiosInstances.delete(this)
+        })
     }
 
     return this.#processorManager.chain()
+  }
+
+  abort () {
+    this.#processorManager.abort()
+  }
+
+  #startRetry (retryType: 'statusError' | 'error') {
+    const retryConfig = this.#configManager.getNearestRetryConfig()
+
+    if (retryConfig?.level === 'api' || !retryConfig?.retry?.retryOthers) {
+      // only retry self
+      retryQueue.enqueue(this)
+    } else if (retryConfig?.level === 'module') {
+      // retry all processing instance in the same module
+      for (const instance of processingMaxiosInstances) {
+        if (instance.module === this.module) {
+          retryQueue.enqueue(instance)
+        }
+      }
+    } else if (retryConfig?.level === 'global') {
+      for (const instance of processingMaxiosInstances) {
+        retryQueue.enqueue(instance)
+      }
+    }
+    const beforeRetry = retryConfig?.retry?.beforeRetry
+    if (beforeRetry instanceof Function) {
+      try {
+        beforeRetry(retryType)
+          .then(() => {
+            retryQueue.retry()
+          })
+      } catch (err) {
+        console.warn('beforeRetry error:', err)
+      }
+    } else {
+      retryQueue.retry()
+    }
   }
 }

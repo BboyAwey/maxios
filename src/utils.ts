@@ -21,3 +21,9 @@ export const pathJoin = (...pathes: (string | undefined | null)[]): string => {
 
   return pathes[0]! + (pathes[0]?.endsWith('/') ? '' : '/') + rest
 }
+
+let selfIncrementId = 1
+
+export const getSelfIncrementId = () => {
+  return selfIncrementId++
+}

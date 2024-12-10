@@ -17,6 +17,7 @@ export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TP
   statusError: (fn: TStatusError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   error: (fn: TError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  setAbortController: (abortController: AbortController) => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
 
 export type TIsError<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
@@ -40,12 +41,21 @@ export interface IMaxiosInnerConfig<
     type: TCacheType
     key: string
   }
+  retry?: {
+    when: {
+      statusError?: TStatusError<Payload, OriginResult>
+      error?: TIsError<Payload, OriginResult>
+    }
+    beforeRetry?: (conditionType: 'statusError' | 'error' ) => Promise<any>
+    retryOthers?: boolean
+  }
   // processors 
   loading?: TLoading
   statusError?: TStatusError<Payload, OriginResult>
   error?: TError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway
+  setAbortController?: (abortController: AbortController) => void
 }
 
 export type TMaxiosConfig<

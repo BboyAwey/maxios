@@ -2,6 +2,7 @@ import ConfigManager from './config-manager'
 import { IProcessorsChain, TAxiosConfig, TMaxiosConfig } from './interfaces'
 import { Maxios } from './maxios'
 import ProcessorManager from './process-manager'
+import { getSelfIncrementId } from './utils'
 
 const getExactConfig = <T> (config: T | (() => T)) => {
   return config instanceof Function? config() : config
@@ -26,6 +27,7 @@ export const modulize = <OriginResult = any> (
     maxiosConfig?: TMaxiosConfig<Payload, OriginResult, FinalResult> | (() => TMaxiosConfig<Payload, OriginResult, FinalResult>)
   ) => IProcessorsChain<Payload, OriginResult, FinalResult>
 ) => {
+  const moduleId = getSelfIncrementId()
   return (apiAxiosConfig, apiMaxiosConfig) => {
     return new Maxios({
       moduleConfig: () => ({
@@ -36,7 +38,7 @@ export const modulize = <OriginResult = any> (
         axiosConfig: getExactConfig(apiAxiosConfig),
         ...getExactConfig(apiMaxiosConfig)
       })
-    }).request()
+    }, moduleId).request()
   }
 }
 
