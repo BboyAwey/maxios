@@ -3,6 +3,11 @@ import { IMaxiosInnerConfig, TNearestCallbackName } from './interfaces'
 import { IMaxiosConstructorConfig } from './maxios'
 import { pathJoin } from './utils'
 
+type IRetryConfig = Required<{
+  level: 'api' | 'module' | 'global'
+  retry: IMaxiosInnerConfig['retry']
+}>
+
 class ConfigManager<
   Payload = any,
   OriginResult = any,
@@ -55,6 +60,25 @@ class ConfigManager<
     return this.apiConfig.cache ||
       this.moduleConfig.cache ||
       ConfigManager.getGlobalConfig().cache
+  }
+
+  getNearestRetryConfig (): IRetryConfig | null {
+    if (this.apiConfig.retry) {
+      return {
+        level: 'api',
+        retry: this.apiConfig.retry
+      }
+    } else if (this.moduleConfig.retry) {
+      return {
+        level: 'module',
+        retry: this.moduleConfig.retry
+      }
+    } else if (ConfigManager.getGlobalConfig().retry) {
+      return {
+        level: 'global',
+        retry: ConfigManager.getGlobalConfig().retry
+      }
+    } else return null
   }
 
   getFinalAxiosConfig () {

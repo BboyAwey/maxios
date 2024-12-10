@@ -30,6 +30,8 @@ class ProcessorManager<
     success: [],
     anyway: []
   }
+  
+  #abortController: AbortController = new AbortController()
 
   executeLoadingProcessors () {
     const processors = [...this.#processors.loading].reverse()
@@ -79,6 +81,10 @@ class ProcessorManager<
     }
   }
 
+  abort () {
+    this.#abortController.abort()
+  }
+
   chain () {
     const chain: IProcessorsChain<Payload, OriginResult, FinalResult> = {
       loading: (fn: TLoading) => {
@@ -101,6 +107,10 @@ class ProcessorManager<
       },
       anyway: (fn: TAnyway) => {
         this.#processors.anyway.push(fn)
+        return chain
+      },
+      setAbortController: (abortController: AbortController) => {
+        this.#abortController = abortController
         return chain
       }
     }
