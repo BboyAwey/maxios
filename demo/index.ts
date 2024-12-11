@@ -54,13 +54,13 @@ const apis = {
         requestSuccess: {
           beforeRetry: () => {
             console.log('before retry in request definition')
-            return Promise.resolve()
+            // return Promise.resolve()
           },
           retryOthers: 'module',
           maximumCount: 4,
           condition: (res) => {
             console.log(res, '000000')
-            return res.data.code !== 0
+            return res.data.code === 0
           }
         }
       }
@@ -76,6 +76,7 @@ const apis = {
 function sendRequest () {
   apis.getShit2()
   apis.getShit()
+  apis.getShit2()
 }
 
 window.addEventListener('load', () => {
