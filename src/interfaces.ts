@@ -17,7 +17,7 @@ export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TP
   statusError: (fn: TStatusError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   error: (fn: TError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
-  setAbortController: (abortController: AbortController) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  abort: () => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
 
 export type TIsError<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
@@ -27,6 +27,12 @@ export type TExtractor<Payload = any, OriginResult = any> = (response: AxiosResp
 export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosRequestConfig<D>) => Promise<R>
 
 export type TNearestCallbackName = 'extractor' | 'isError' | 'request'
+
+export interface IRetryWhenError {
+  beforeRetry?: () => Promise<any>
+  retryOthers?: boolean | 'module' | 'global'
+  maximumCount?: number
+}
 
 export interface IMaxiosInnerConfig<
   Payload = any,
@@ -41,13 +47,9 @@ export interface IMaxiosInnerConfig<
     type: TCacheType
     key: string
   }
-  retry?: {
-    when: {
-      statusError?: TStatusError<Payload, OriginResult>
-      error?: TIsError<Payload, OriginResult>
-    }
-    beforeRetry?: (conditionType: 'statusError' | 'error' ) => Promise<any>
-    retryOthers?: boolean
+  retryWhen?: {
+    statusError?: IRetryWhenError
+    error?: IRetryWhenError
   }
   // processors 
   loading?: TLoading
@@ -55,7 +57,6 @@ export interface IMaxiosInnerConfig<
   error?: TError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway
-  setAbortController?: (abortController: AbortController) => void
 }
 
 export type TMaxiosConfig<

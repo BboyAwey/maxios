@@ -7,7 +7,10 @@ const router = new Router({
   prefix: '/api'
 })
 
-router.get('/get-shit', async (ctx, next) => {
+router.get('/get-shit-2', async (ctx, next) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 5000)
+  })
   ctx.body = {
     code: 0,
     msg: '',
@@ -18,6 +21,22 @@ router.get('/get-shit', async (ctx, next) => {
   ctx.status = 200
   await next()
 })
+
+router.get('/get-shit', async (ctx, next) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 1000)
+  })
+  ctx.body = {
+    code: 0,
+    msg: '',
+    data: {
+      shit: 1
+    }
+  }
+  ctx.status = 200
+  await next()
+})
+
 
 router.put('/put-shit', async (ctx, next) => {
   ctx.body = {
