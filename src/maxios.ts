@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosResponse } from 'axios'
 import Dache, { TCacheType } from '@awey/dache'
 import { nextTick, uuid } from './utils'
 import {
@@ -99,46 +99,50 @@ export class Maxios<
           if (requestID === this.#requestID) processingMaxiosInstances.delete(this)
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
-            if (!res) {
-              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
-              return
-            }
-            // use isError indicator
-            const hasError = this.#configManager.getNearestCallback('isError', () => false)(res)
-            console.log('has error:', hasError)
-            if (!hasError) {
-              // use extractor
-              const extractor = this.#configManager.getNearestCallback(
-                'extractor',
-                (res: AxiosResponse<OriginResult, Payload>) => res.data
+            // retry when success
+            if (
+              retryConfig?.retryWhen.requestSuccess &&
+              (this.#retryCount < (retryConfig.retryWhen.requestSuccess.maximumCount || DEFAULT_MAXIMUM_RETRY_COUNT)) &&
+              (
+                retryConfig.retryWhen.requestSuccess.condition
+                  ? retryConfig.retryWhen.requestSuccess.condition(res)
+                  : true
               )
-              let extractRes: FinalResult | undefined
-
-              extractRes = extractor(res)
-              this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
-              this.#processorManager.executeAnywayProcessors(res, axiosConfig)
-
-              // cache result
-              if (cacheConfig) {
-                daches[cacheConfig.type].set(cacheConfig.key, extractRes)
-              }
+            ) {
+              this.#retryCount++
+              console.log('start retry ---',  this.#configManager.apiConfig.axiosConfig?.url)
+              this.#startRetry(
+                retryConfig.retryWhen.requestSuccess.retryOthers === 'module'
+                  ? 'module'
+                  : retryConfig.retryWhen.requestSuccess.retryOthers === 'global'
+                    ? 'global'
+                    : retryConfig.level,
+                retryConfig.retryWhen.requestSuccess
+              )
             } else {
-              console.log(this.#configManager.getNearestRetryConfig(), '+++', this.#configManager.apiConfig.axiosConfig?.url)
-              // retry when status error
-              if (
-                retryConfig?.retryWhen.error &&
-                (this.#retryCount < (retryConfig.retryWhen.error.maximumCount || DEFAULT_MAXIMUM_RETRY_COUNT))
-              ) {
-                this.#retryCount++
-                console.log('start retry ---',  this.#configManager.apiConfig.axiosConfig?.url)
-                this.#startRetry(
-                  retryConfig.retryWhen.error.retryOthers === 'module'
-                    ? 'module'
-                    : retryConfig.retryWhen.error.retryOthers === 'global'
-                      ? 'global'
-                      : retryConfig.level,
-                  retryConfig.retryWhen.error
+              if (!res) {
+                this.#processorManager.executeAnywayProcessors(res, axiosConfig)
+                return
+              }
+              // use isError indicator
+              const hasError = this.#configManager.getNearestCallback('isError', () => false)(res)
+              console.log('has error:', hasError)
+              if (!hasError) {
+                // use extractor
+                const extractor = this.#configManager.getNearestCallback(
+                  'extractor',
+                  (res: AxiosResponse<OriginResult, Payload>) => res.data
                 )
+                let extractRes: FinalResult | undefined
+
+                extractRes = extractor(res)
+                this.#processorManager.executeSuccessProcessors(extractRes as FinalResult)
+                this.#processorManager.executeAnywayProcessors(res, axiosConfig)
+
+                // cache result
+                if (cacheConfig) {
+                  daches[cacheConfig.type].set(cacheConfig.key, extractRes)
+                }
               } else {
                 this.#processorManager.executeErrorProcessors(res)
                 this.#processorManager.executeAnywayProcessors(res, axiosConfig)
@@ -157,7 +161,12 @@ export class Maxios<
           nextTick(() => {
             if (
               retryConfig?.retryWhen.requestError &&
-              this.#retryCount < (retryConfig.retryWhen.error?.maximumCount || DEFAULT_MAXIMUM_RETRY_COUNT)
+              this.#retryCount < (retryConfig.retryWhen.requestError?.maximumCount || DEFAULT_MAXIMUM_RETRY_COUNT) &&
+              (
+                retryConfig.retryWhen.requestError.condition
+                  ? retryConfig.retryWhen.requestError.condition(err)
+                  : true
+              )
             ) {
               this.#retryCount++
               this.#startRetry(
@@ -189,7 +198,7 @@ export class Maxios<
 
   #startRetry (
     retryLevel: 'api' | 'module' | 'global',
-    retryWhenConfig: IRetryWhen
+    retryWhenConfig: IRetryWhen<AxiosResponse<OriginResult, Payload>> | IRetryWhen<AxiosError<OriginResult, Payload>>
   ) {
     console.log('--equeue', this.#configManager.apiConfig.axiosConfig?.url)
     retryQueue.enqueue(this)

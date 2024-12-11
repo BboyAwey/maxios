@@ -28,8 +28,9 @@ export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: Axi
 
 export type TNearestCallbackName = 'extractor' | 'isError' | 'request'
 
-export interface IRetryWhen {
+export interface IRetryWhen<T> {
   beforeRetry?: () => Promise<any>
+  condition?: (res: T) => boolean
   retryOthers?: boolean | 'module' | 'global'
   maximumCount?: number
 }
@@ -48,9 +49,8 @@ export interface IMaxiosInnerConfig<
     key: string
   }
   retryWhen?: {
-    success?: IRetryWhen
-    requestError?: IRetryWhen
-    error?: IRetryWhen
+    requestSuccess?: IRetryWhen<AxiosResponse<OriginResult, Payload>>
+    requestError?: IRetryWhen<AxiosError<OriginResult, Payload>>
   }
   // processors 
   loading?: TLoading

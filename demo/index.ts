@@ -43,17 +43,25 @@ const request = modulize(
 )
 const apis = {
   getShit () {
-    return request({
+    return request<void, {
+      code: number
+      msg: string
+      data: { shit: number }
+    }>({
       url: '/get-shit'
     }, {
       retryWhen: {
-        error: {
+        requestSuccess: {
           beforeRetry: () => {
-            console.log('before retry')
+            console.log('before retry in request definition')
             return Promise.resolve()
           },
           retryOthers: 'module',
-          maximumCount: 4
+          maximumCount: 4,
+          condition: (res) => {
+            console.log(res, '000000')
+            return res.data.code !== 0
+          }
         }
       }
     })
