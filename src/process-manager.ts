@@ -6,13 +6,13 @@ import {
   TError,
   TLoading,
   TProcessorNames,
-  TStatusError,
+  TRequestError,
   TSuccess
 } from './interfaces'
 
 interface IProcessorSets<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: TLoading[]
-  statusError: TStatusError<Payload, OriginResult>[],
+  requestError: TRequestError<Payload, OriginResult>[],
   error: TError<OriginResult>[]
   success: TSuccess<FinalResult>[]
   anyway: TAnyway[]
@@ -25,7 +25,7 @@ class ProcessorManager<
 > {
   #processors: IProcessorSets<Payload, OriginResult, FinalResult> = {
     loading: [],
-    statusError: [],
+    requestError: [],
     error: [],
     success: [],
     anyway: []
@@ -40,8 +40,8 @@ class ProcessorManager<
     })
   }
 
-  executeStatusErrorProcessors (err: AxiosError<OriginResult, Payload>) {
-    const processors = [...this.#processors.statusError].reverse()
+  executeRequestErrorProcessors (err: AxiosError<OriginResult, Payload>) {
+    const processors = [...this.#processors.requestError].reverse()
     for (const fn of processors) {
       try {
         if (!fn(err)) break
@@ -97,8 +97,8 @@ class ProcessorManager<
         this.#processors.success.push(fn)
         return chain
       },
-      statusError: (fn: TStatusError<Payload, OriginResult>) => {
-        this.#processors.statusError.push(fn)
+      requestError: (fn: TRequestError<Payload, OriginResult>) => {
+        this.#processors.requestError.push(fn)
         return chain
       },
       error: (fn: TError<OriginResult>) => {

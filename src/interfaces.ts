@@ -2,7 +2,7 @@ import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { TCacheType } from '@awey/dache'
 
 export type TLoading = (status: boolean) => void
-export type TStatusError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
+export type TRequestError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
 export type TError<Result> = (data: Result) => void | boolean
 export type TSuccess<Result> = (data: Result) => void
 export type TAnyway = (result?: AxiosResponse | AxiosError, config?: AxiosRequestConfig) => void
@@ -14,7 +14,7 @@ export type TProcessorNames = Partial<Record<
 export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TProcessorNames {
   loading: (fn: TLoading) => IProcessorsChain<Payload, OriginResult, FinalResult>
   success: (fn: TSuccess<FinalResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
-  statusError: (fn: TStatusError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
+  requestError: (fn: TRequestError<Payload, OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   error: (fn: TError<OriginResult>) => IProcessorsChain<Payload, OriginResult, FinalResult>
   anyway: (fn: TAnyway) => IProcessorsChain<Payload, OriginResult, FinalResult>
   abort: () => IProcessorsChain<Payload, OriginResult, FinalResult>
@@ -28,7 +28,7 @@ export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: Axi
 
 export type TNearestCallbackName = 'extractor' | 'isError' | 'request'
 
-export interface IRetryWhenError {
+export interface IRetryWhen {
   beforeRetry?: () => Promise<any>
   retryOthers?: boolean | 'module' | 'global'
   maximumCount?: number
@@ -48,12 +48,13 @@ export interface IMaxiosInnerConfig<
     key: string
   }
   retryWhen?: {
-    statusError?: IRetryWhenError
-    error?: IRetryWhenError
+    success?: IRetryWhen
+    requestError?: IRetryWhen
+    error?: IRetryWhen
   }
   // processors 
   loading?: TLoading
-  statusError?: TStatusError<Payload, OriginResult>
+  requestError?: TRequestError<Payload, OriginResult>
   error?: TError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway

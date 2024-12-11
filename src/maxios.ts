@@ -3,7 +3,7 @@ import Dache, { TCacheType } from '@awey/dache'
 import { nextTick, uuid } from './utils'
 import {
   IMaxiosInnerConfig,
-  IRetryWhenError,
+  IRetryWhen,
   TRequest
 } from './interfaces'
 import ProcessorManager from './process-manager'
@@ -156,20 +156,20 @@ export class Maxios<
           
           nextTick(() => {
             if (
-              retryConfig?.retryWhen.statusError &&
+              retryConfig?.retryWhen.requestError &&
               this.#retryCount < (retryConfig.retryWhen.error?.maximumCount || DEFAULT_MAXIMUM_RETRY_COUNT)
             ) {
               this.#retryCount++
               this.#startRetry(
-                retryConfig.retryWhen.statusError.retryOthers === 'module'
+                retryConfig.retryWhen.requestError.retryOthers === 'module'
                     ? 'module'
-                    : retryConfig.retryWhen.statusError.retryOthers === 'global'
+                    : retryConfig.retryWhen.requestError.retryOthers === 'global'
                       ? 'global'
                       : retryConfig.level,
-                retryConfig.retryWhen.statusError
+                retryConfig.retryWhen.requestError
               )
             } else {
-              this.#processorManager.executeStatusErrorProcessors(err)
+              this.#processorManager.executeRequestErrorProcessors(err)
               nextTick(() => {
                 // make sure anyway processor is been executed after any other processors
                 this.#processorManager.executeAnywayProcessors(err, axiosConfig)
@@ -189,7 +189,7 @@ export class Maxios<
 
   #startRetry (
     retryLevel: 'api' | 'module' | 'global',
-    retryWhenConfig: IRetryWhenError
+    retryWhenConfig: IRetryWhen
   ) {
     console.log('--equeue', this.#configManager.apiConfig.axiosConfig?.url)
     retryQueue.enqueue(this)
@@ -210,11 +210,11 @@ export class Maxios<
       }
     }
 
-    for (const instance of retryQueue.getQueue()) {
+    retryQueue.walk(instance => {
       console.log('--delete from processing', instance.#configManager.apiConfig.axiosConfig?.url)
       processingMaxiosInstances.delete(instance)
       instance.abort()
-    }
+    })
 
     const beforeRetry = retryWhenConfig.beforeRetry
     if (beforeRetry instanceof Function) {

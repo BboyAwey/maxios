@@ -15,7 +15,7 @@ export class RetryQueue {
     this.#queue = []
   }
 
-  getQueue () {
-    return this.#queue
+  walk (fn: (item: Maxios, index: number) => void) {
+    this.#queue.forEach(fn)
   }
 }
