@@ -228,11 +228,19 @@ export class Maxios<
     const beforeRetry = retryWhenConfig.beforeRetry
     if (beforeRetry instanceof Function) {
       try {
-        beforeRetry()
-          .then(() => {
+        const beforeRetryResult = beforeRetry()
+
+        if (beforeRetryResult instanceof Promise) {
+          beforeRetryResult.then(() => {
             console.log('do retry',  this.#configManager.apiConfig.axiosConfig?.url)
             retryQueue.retry()
           })
+        } else {
+          console.log('do retry',  this.#configManager.apiConfig.axiosConfig?.url)
+          retryQueue.retry()
+        }
+        beforeRetry()
+          
       } catch (err) {
         console.warn('beforeRetry error:', err)
       }
