@@ -26,7 +26,7 @@ globalConfig({
 }, {
   isError: response => response.data?.code !== 0
   error: response => console.log(response.data.code)
-  statusError: axiosError => console.warn(axiosError)
+  requestError: axiosError => console.warn(axiosError)
   extractor: response => response.data.data
   request: config => console.log('start to request: ', config)
   anyway: (res, config) => console.log('some ajax calling happens and the result is': res)
@@ -154,7 +154,7 @@ interface TMaxiosConfig {
   }
   loading?: TLoading
   error?: TError<Payload, OriginResult>
-  statusError?: TStatusError<OriginResult>
+  requestError?: TRequestError<OriginResult>
   success?: TSuccess<FinalResult>
   anyway?: TAnyway
 }
@@ -167,7 +167,7 @@ interface TMaxiosConfig {
   * `cache.type`: specifies which type of caching should maxios use to store the response data. It should be one of the `memory`, `session`(session storage) or `local`(local storage)
   * `cache.key`: a key which is used to store the response data in cache
 * `loading`: a callback function which will be executed when fetch loading status changed. It recieves an argument `status` to indecate if it is loading right now
-* `statusError`: a callback function which will be executed when response status code is not right. It recieves an argument `axiosError`. And it can return `false` to stop Maxios to execute next `statusError` callbacks from upper layers
+* `requestError`: a callback function which will be executed when response status code is not right. It recieves an argument `axiosError`. And it can return `false` to stop Maxios to execute next `requestError` callbacks from upper layers
 * `error`: a callback function which will be executed when `isError` returns true. It recieves an argument `data` as the origin response data. And it can return `false` to stop Maxios to execut next `error` callbacks from upper layers
 * `success`: a callback function which will be executed when `indicator` returns true. It recieves an argument `data` as the final response data (the data has been handled by `extractor`).
 * `anyway`: a callback function which will be always executed.
@@ -241,5 +241,5 @@ toPromise(userModel.getUsers({ gender: 'female' }))
   .finally(() => console.log('to promise finally'))
 ```
 
-> ATTENTION: the request chain object should return not return `false` in it's `error` or `statusError` handler if it will be wrapped by `toPromise()`. Otherwise the promise instance will not work as we expected.
+> ATTENTION: the request chain object should return not return `false` in it's `error` or `requestError` handler if it will be wrapped by `toPromise()`. Otherwise the promise instance will not work as we expected.
 
