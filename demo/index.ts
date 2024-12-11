@@ -7,21 +7,21 @@ interface Response<T> {
   msg: string
 }
 
-globalConfig({
-  baseURL: 'http://localhost:3000'
-})
+// globalConfig({
+//   baseURL: 'http://localhost:3000'
+// })
 
-let num = 0
+// let num = 0
 
-setInterval(() => {
-  num = Math.round(Math.random() * 1000)
-}, 1000)
+// setInterval(() => {
+//   num = Math.round(Math.random() * 1000)
+// }, 1000)
 
 globalConfig<Response<unknown>>(
   {
     baseURL: '/api',
     headers: {
-      XXXXGLOBAL: num + ''
+      'XXXX-GLOBAL': 'header from global'
     }
   },
   {
@@ -31,206 +31,43 @@ globalConfig<Response<unknown>>(
     extractor (response) {
       return response.data.data
     },
-    error (data) {
-      console.log(data, '-- error from global')
-    },
-    statusError (err) {
-      console.log(err, '-- status error')
-    },
-    success () {
-      console.log('success from global')
-    },
-    anyway () {
-      console.log('anyway from global')
-    }
   }
 )
 
-// const getShitRequest = modulize()
-
-// const getShit = () => {
-//   getShitRequest({
-//     axiosConfig: {
-//       url: 'get-shit'
-//     },
-//     cache: {
-//       type: 'memory',
-//       key: 'shit'
-//     }
-//   }).success(res => {
-//     console.log(res)
-//   })
-// }
-
-// setInterval(() => {
-//   getShit()
-// }, 2000)
 const request = modulize(
   () => ({
     headers: {
-      XXXX_MODULE: num + ''
-    }
-  }),
-  () => ({
-    statusError (error) {
-      console.log(error, '-- module status error')
-    },
-    error (data: any) {
-      console.log(data, '-- error from module')
-      return true
-    },
-    success () {
-      console.log('success from module')
-    },
-    anyway () {
-      console.log('anyway from module')
+      'XXXX-MODULE': 'header from module'
     }
   })
 )
-
-// request<{ a: number }, string>({
-//   axiosConfig: {
-//     url: '/biz-error-shit',
-//     params: { a: 1 }
-//   },
-//   bizError (data) {
-//     console.log(data, '--biz error from api')
-//     return true
-//   },
-//   beforeSend (axiosConfig) {
-//     console.log(axiosConfig.params, '--before send form api')
-//     return axiosConfig
-//   }
-// })
 const apis = {
   getShit () {
     return request({
       url: '/get-shit'
     }, {
-      success () {
-        console.log('success from api')
-      },
-      anyway () {
-        console.log('anyway from api')
-      }
-    })
-  }
-}
-
-const errorApis = {
-  getBizError (query: { a: number }) {
-    return request<{ a: number }, string>({
-      url: '/biz-error-shit',
-      params: query,
-      headers: {
-        XXXXAPI: num + ''
-      }
-    }, {
-      error (data) {
-        console.log(data, '-- error from api')
-        return true
-      },
-      cache: {
-        key: 'biz_error',
-        type: 'memory'
+      retryWhen: {
+        error: {
+          beforeRetry: () => {
+            console.log('before retry')
+            return Promise.resolve()
+          },
+          retryOthers: 'module',
+          maximumCount: 4
+        }
       }
     })
   },
-  getBizError2 (query: { a: number }) {
-    return request<{ a: number }, string>({
-      url: '/biz-error-shit',
-      params: query
-    }, {
-      error (data) {
-        console.log(data, '-- error from api')
-        return true
-      }
+  getShit2 () {
+    return request({
+      url: '/get-shit-2'
     })
   }
-  // getShit (query: { a: number }) {
-  //   return waterfall([
-  //     errorApis.getBizError(query),
-  //     errorApis.getBizError2(query)
-  //   ])
-  // }
-}
-
-const getError = () => {
-  return request<void, { code: number, msg: string, data: { a: 1 } }, { a: 1 }>({
-    url: '/error'
-  }, {
-    statusError (error) {
-      console.log(error, 'api status error')
-      return true
-    }
-  })
 }
 
 function sendRequest () {
-  // errorApis.getBizError({ a: 1 }).bizError((data) => {
-  //   console.log(data, '--biz error from request')
-  //   return true
-  // }).error(err => {
-  //   console.log(err, '--http err from request')
-  //   return true
-  // })
-  // apis.getShit()
-  //   .loading((status) => {
-  //     console.log(status, '---loading from request')
-  //   })
-  //   .success(() => {
-  //     console.log('success from request')
-  //   })
-  //   .anyway(() => {
-  //     console.log('anyway from request')
-  //   })
-  // errorApis.getBizError({ a: 2 })
-
-  race<{ shit: 1 }>([
-    apis.getShit(),
-    apis.getShit(),
-    errorApis.getBizError({ a: 2 })
-  ])
-    .anyway(() => {
-      console.log('---race anyway')
-    })
-    .success((res) => {
-      console.log('---race success', res)
-    })
-    .statusError(err => {
-      console.log('---race err', err)
-    })
-    .error(err => {
-      console.log('---race biz err', err)
-    })
-    .loading(loading => {
-      console.log('---race loading', loading)
-    })
-  
-  all<[{ shit: number }, { shit: 1 }]>([
-    apis.getShit(),
-    apis.getShit(),
-    // errorApis.getBizError({ a: 2 })
-  ])
-    .anyway(() => {
-      console.log('---all anyway')
-    })
-    .success((res) => {
-      console.log('---all success', res)
-    })
-    .statusError(err => {
-      console.log('---all err', err)
-    })
-    .error(err => {
-      console.log('---all biz err', err)
-    })
-    .loading(loading => {
-      console.log('---all loading', loading)
-    })
-  
-  toPromise(getError())
-    .then(res => console.log('to promise res', res))
-    .catch(error => console.log('to promise error: ', error))
+  apis.getShit2()
+  apis.getShit()
 }
 
 window.addEventListener('load', () => {

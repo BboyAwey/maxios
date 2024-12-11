@@ -30,8 +30,8 @@ class ProcessorManager<
     success: [],
     anyway: []
   }
-  
-  #abortController: AbortController = new AbortController()
+
+  #abortCallback = () => {}
 
   executeLoadingProcessors () {
     const processors = [...this.#processors.loading].reverse()
@@ -81,8 +81,8 @@ class ProcessorManager<
     }
   }
 
-  abort () {
-    this.#abortController.abort()
+  onAbort (fn: () => void) {
+    this.#abortCallback = fn
   }
 
   chain () {
@@ -109,8 +109,8 @@ class ProcessorManager<
         this.#processors.anyway.push(fn)
         return chain
       },
-      setAbortController: (abortController: AbortController) => {
-        this.#abortController = abortController
+      abort: () => {
+        this.#abortCallback()
         return chain
       }
     }

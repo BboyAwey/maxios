@@ -5,7 +5,7 @@ import { pathJoin } from './utils'
 
 type IRetryConfig = Required<{
   level: 'api' | 'module' | 'global'
-  retry: IMaxiosInnerConfig['retry']
+  retryWhen: NonNullable<IMaxiosInnerConfig['retryWhen']>
 }>
 
 class ConfigManager<
@@ -63,20 +63,20 @@ class ConfigManager<
   }
 
   getNearestRetryConfig (): IRetryConfig | null {
-    if (this.apiConfig.retry) {
+    if (this.apiConfig.retryWhen) {
       return {
         level: 'api',
-        retry: this.apiConfig.retry
+        retryWhen: this.apiConfig.retryWhen
       }
-    } else if (this.moduleConfig.retry) {
+    } else if (this.moduleConfig.retryWhen) {
       return {
         level: 'module',
-        retry: this.moduleConfig.retry
+        retryWhen: this.moduleConfig.retryWhen
       }
-    } else if (ConfigManager.getGlobalConfig().retry) {
+    } else if (ConfigManager.getGlobalConfig().retryWhen) {
       return {
         level: 'global',
-        retry: ConfigManager.getGlobalConfig().retry
+        retryWhen: ConfigManager.getGlobalConfig().retryWhen!
       }
     } else return null
   }
