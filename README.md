@@ -24,7 +24,7 @@ import { globalConfig, modulize } from '@awey/maxios'
 globalConfig({
   baseUrl: 'api'
 }, {
-  isError: response => response.data?.code !== 0
+  expect: response => response.data?.code === 0
   error: response => console.log(response.data.code)
   requestError: axiosError => console.warn(axiosError)
   extractor: response => response.data.data
@@ -145,7 +145,7 @@ A Maxios config object is like below:
 
 ```typescript
 interface TMaxiosConfig {
-  isError?: TIsError<OriginResult>
+  expect?: TExpect<OriginResult>
   extractor?: TExtractor<Payload, OriginResult, FinalResult>
   request?: TRequest
   cache?: {
@@ -230,6 +230,9 @@ race<User[] | Group[] | Room[]>([
   })
 ```
 
+## Retry Requests
+
+
 ## `toPromise()`
 
 Sometimes you will need to convert a request chain object to a standard promise instance, then `toPromise()` function will be a handy util for you.
@@ -243,3 +246,6 @@ toPromise(userModel.getUsers({ gender: 'female' }))
 
 > ATTENTION: the request chain object should return not return `false` in it's `error` or `requestError` handler if it will be wrapped by `toPromise()`. Otherwise the promise instance will not work as we expected.
 
+## Migration from V1
+
+TODO:

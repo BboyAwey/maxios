@@ -25,8 +25,8 @@ globalConfig<Response<unknown>>(
     }
   },
   {
-    isError (response) {
-      return response.data.code !== 1
+    expect (response) {
+      return response.data.code === 1
     },
     extractor (response) {
       return response.data.data
