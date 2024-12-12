@@ -1,11 +1,11 @@
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { TCacheType } from '@awey/dache'
 
-export type TLoading = (status: boolean) => void
+export type TLoading = (status: boolean) => void | boolean
 export type TRequestError<Payload, Result> = (error: AxiosError<Result, Payload>) => void | boolean
 export type TError<Result> = (data: Result) => void | boolean
-export type TSuccess<Result> = (data: Result) => void
-export type TAnyway = (result?: AxiosResponse | AxiosError, config?: AxiosRequestConfig) => void
+export type TSuccess<Result> = (data: Result) => void | boolean
+export type TAnyway = (result?: AxiosResponse | AxiosError, config?: AxiosRequestConfig) => void | boolean
 
 export type TProcessorNames = Partial<Record<
   'loading' | 'error' | 'bizError' | 'success' | 'anyway',
