@@ -20,13 +20,13 @@ export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TP
   abort: () => IProcessorsChain<Payload, OriginResult, FinalResult>
 }
 
-export type TIsError<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
+export type TExpect<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => boolean
 
 export type TExtractor<Payload = any, OriginResult = any> = (response: AxiosResponse<OriginResult, Payload>) => unknown
 
 export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosRequestConfig<D>) => Promise<R>
 
-export type TNearestCallbackName = 'extractor' | 'isError' | 'request'
+export type TNearestCallbackName = 'extractor' | 'expect' | 'request'
 
 export interface IRetryWhen<T> {
   beforeRetry?: () => Promise<any> | void
@@ -41,7 +41,7 @@ export interface IMaxiosInnerConfig<
   FinalResult = OriginResult
 > extends TProcessorNames, Partial<Record<TNearestCallbackName, any>> {
   axiosConfig?: AxiosRequestConfig<Payload>
-  isError?: TIsError<Payload, OriginResult>
+  expect?: TExpect<Payload, OriginResult>
   extractor?: TExtractor<Payload, OriginResult>
   request?: TRequest
   cache?: {

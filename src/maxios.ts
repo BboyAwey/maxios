@@ -124,8 +124,8 @@ export class Maxios<
                 this.#processorManager.executeAnywayProcessors(res, axiosConfig)
                 return
               }
-              // use isError indicator
-              const hasError = this.#configManager.getNearestCallback('isError', () => false)(res)
+              // check if the response is expected
+              const hasError = !this.#configManager.getNearestCallback('expect', () => false)(res)
               console.log('has error:', hasError)
               if (!hasError) {
                 // use extractor
