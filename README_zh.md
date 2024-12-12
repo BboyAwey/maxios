@@ -226,7 +226,7 @@ Maxios提供了请求重试的功能。你可以指定在一定条件下，对�
     * `retryWhen.requestError.beforeRetry?: () => Promise | void`：每次重试前需要执行的逻辑
     * `retryWhen.requestError.condition?: AxiosError => boolean`：重试条件
     * `retryWhen.requestError.retryOthers?: boolean | 'module' | 'global'`：重试时是否要取消并重试其它正在发起的请求
-    * `retryWhen.requestError.maximumCount?: number`：最大重试次数
+    * `retryWhen.requestError.maximumCount?: number`：最大重试次数，默认为1
 
 ### 结果缓存
 
@@ -256,6 +256,9 @@ type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosReque
 5. 响应不符合预期时的回调函数配置`maxiosConfig.bizError`更名为`maxiosConfig.error`，且打断后续层级执行的返回值由原来的`true`变更为`false`
 6. `loading`、`success`和`anyway`的回调函数执行顺序变更为从低层级到高层级，且增加了返回`false`来打断后续层级执行的能力
 
-## TODO: 周边
+## 周边
 
 Maxios还提供了基于React Hooks和Vue Composition两种风格的转换器，让你在实际业务中使用Maxios更为趁手。
+
+* [maxios-react](https://github.com/BboyAwey/maxios-react)
+* [maxios-vue](https://github.com/BboyAwey/maxios-vue)
