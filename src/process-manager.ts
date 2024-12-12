@@ -35,16 +35,18 @@ class ProcessorManager<
 
   executeLoadingProcessors () {
     const processors = [...this.#processors.loading].reverse()
-    processors.forEach(fn => {
-      try { fn(false) } catch (err) { console.warn(err) }
-    })
+    for (const fn of processors) {
+      try {
+        if (fn(false) === false) break
+      } catch (err) { console.warn(err) }
+    }
   }
 
   executeRequestErrorProcessors (err: AxiosError<OriginResult, Payload>) {
     const processors = [...this.#processors.requestError].reverse()
     for (const fn of processors) {
       try {
-        if (!fn(err)) break
+        if (fn(err) === false) break
       } catch (err) { console.warn(err) }
     }
   }
@@ -53,21 +55,27 @@ class ProcessorManager<
     const processors = [...this.#processors.error].reverse()
     for (const fn of processors) {
       try {
-        if (!fn(response.data)) break
+        if (fn(response.data) === false) break
       } catch (err) { console.warn(err) }
     }
   }
 
   executeSuccessProcessors (result: FinalResult) {
-    this.#processors.success.forEach(fn => {
-      try { fn(result) } catch (err) { console.warn(err) }
-    })
+    const processors = [...this.#processors.success].reverse()
+    for (const fn of processors) {
+      try {
+        if (fn(result) === false) break
+      } catch (err) { console.warn(err) }
+    }
   }
 
   executeAnywayProcessors (res?: AxiosResponse | AxiosError, axiosConfig?: AxiosRequestConfig<Payload>) {
-    this.#processors.anyway.forEach(fn => {
-      try { fn(res, axiosConfig) } catch (err) { console.warn(err) }
-    })
+    const processors = [...this.#processors.anyway].reverse()
+    for (const fn of processors) {
+      try {
+        if (fn(res, axiosConfig) === false) break
+      } catch (err) { console.warn(err) }
+    }
   }
 
   loadProcessorFromMaxiosConfig (config: IMaxiosInnerConfig) {
