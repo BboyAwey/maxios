@@ -1,59 +1,64 @@
-
 # Maxios
 
-Use axios to fetch data, but configure every api with 4 levels of configurations. And It will handle the most important and frequently-used configurations of axios properly (merge, join or replace). Additionally, seperating remote apis to diffirent modules is the recommended way to use Maxios.
+Maxios is a library for making data requests based on [Axios](https://axios-http.com). It primarily focuses on layering Axios configurations and merging them using the most commonly used logic (merge/join/replace, etc.).
 
-## Install
+## Motivation
+
+Although there are countless similar libraries on the market, I haven't come across one that manages commonly used configurations for requests in a layered way during my daily development. For instance, when handling errors, if you're using Axios directly, you might use its interceptors for global error handling (e.g., error prompts). However, in some special scenarios, you might want certain requests to handle errors independently without triggering the global error logic. Or you may want to add specific error-handling logic for certain modules while ensuring that the global error logic works as expected. If you want to manage common request configurations in a layered way and control whether upper-layer configurations are effective at any time, Maxios is your best choice.
+
+## Installation and Import
+
+You can install Maxios via Yarn or NPM:
 
 ```sh
-# NPM
-npm install @awey/maxios --save
+# npm
+npm install @awey/maxio
 
-# Yarn
+# yarn
 yarn add @awey/maxios
 ```
 
-## Usage
-
-A basic example of maxios usage is like below:
+Then, import Maxios into your code:
 
 ```ts
 import { globalConfig, modulize } from '@awey/maxios'
 
-// set some global config
 globalConfig({
-  baseUrl: 'api'
-}, {
-  expect: response => response.data?.code === 0
-  error: response => console.log(response.data.code)
-  requestError: axiosError => console.warn(axiosError)
-  extractor: response => response.data.data
-  request: config => console.log('start to request: ', config)
-  anyway: (res, config) => console.log('some ajax calling happens and the result is': res)
+  baseUrl: '/api'
 })
 
-// get modulized request function
 const request = modulize({
-  baseURL: '/order'
+  baseUrl: '/user'
 })
 
-// use request function to access the /order api
-request({
-  url: '/get-orders',
-  params: {
-    username: 'Tom'
-  }
-})
-  .loading(loading => console.log('loading status: ' loading))
-  .success(res => {
-    // do anything
-  })
+request().success(users => {/* Business logic */})
 ```
 
-But the recommended way to use Maxios is modulize your apis as models. you can create a file named `src/models/user.ts`:
+## Best Practices
+
+Maxios recommends organizing your requests into different model files after completing the global request configuration. Then, import the models in your business code and use the methods within them to initiate requests.
+
+First, configure global requests:
 
 ```ts
-/* src/models/user.ts */
+/* global-config.ts */
+import { globalConfig } from '@awey/maxios'
+
+globalConfig({
+  baseUrl: '/api'
+}, {
+  requestError (err) {/* Handle request errors */},
+  expect: response => response.data.code === 0, // Check if the server response meets expectations
+  error (data) {/* Handle server response errors */},
+  extractor: response => response.data.data, // Extract business data from AxiosResponse
+  // ...Other configurations
+})
+```
+
+Then create model files to categorize requests:
+
+```ts
+/* models/user.ts */
 interface User {
   id: number
   name: string
@@ -69,15 +74,13 @@ interface ResponseData<T> {
   data: T
 }
 
-// get modulized request function
 const request = modulize({
   baseURL: '/user'
 })
 
-// modulize your apis as an object
-// and this is the recomanded way
+// It is recommended to expose the entire model interface as an object
 export default Object.freeze({
-  getUsers (condition: Patial<UserInfo>) {
+  getUsers (condition: Partial<UserInfo>) {
     return request<void, ResponseData<User[]>>({
       params: condition
     })
@@ -90,162 +93,132 @@ export default Object.freeze({
   }
 })
 
-// or just export model apis one by one
+// Alternatively, you can return individual interfaces independently
 export const createUser = (userInfo: UserInfo) => {
   return request<UserInfo, ResponseData<User>>({
     method: 'POST',
     data: userInfo
   })
 }
-
-export const deleteUserById = (id: number) => {
-  return request<void, ResponseData<void>>({
-    url: `/${id}`,
-    method: 'DELETE'
-  })
-}
-
-export const updateUser = (user: User) => {
-  return request<user, ResponseData<void>>({
-    url: `/${user.id}`,
-    method: 'PUT'
-  })
-}
 ```
 
-And you can use those model apis like below:
+Finally, import the defined models in your business code to write business logic (Maxios supports use in any framework; the example below uses React):
 
-```ts
-import userModel, { deleteUserById } from 'src/model/user'
+```tsx
+/** Business Code */
+import { useState } from 'react'
+import userModel, { User } from 'model/user'
 
-// use object is better for understanding
+const [usersLoading, setUsersLoading] = useState(false)
+const [users, setUsers] = useState<User[]>([])
+
+// Returning models as objects improves code readability
+// Methods also have the model prefix, allowing simpler naming
 userModel.getUsers({ name: 'Tony'})
-  .success(res => console.log(res.data))
-
-deleteUserById(1)
-  .success(res => console.log(res))
+  .loading(setUsersLoading)
+  .success(setUsers)
 ```
 
-## Maxios API
+## Chained Calls
 
-* `globalConfig(axiosConfig: AxiosRequestConfig | () => AxiosRequestConfig, maxiosConfig: TMaxiosConfig | () => TMaxiosConfig) => void`: global configuration function
-* `modulize(axiosConfig: AxiosRequestConfig | () => AxiosRequestConfig, maxiosConfig: TMaxiosConfig | () => TMaxiosConfig) => ModulizedReqFunc`: a function that can set a module configuration and return a modulized request function
-* `race(requests: IProcessChain[]) => IProcessChain`: a function that can race all giving requests and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
-* `all(requests: IProcessChain[]) => IProcessChain`: a function that can get all giving requests's result and return a chain object that you can call `loading`,`error`,`bizError`,`success` and `anyway` functions with it
+The `request()` function returned by `modulize()` provides an object that supports chained calls. As shown in the code above, you can use methods like `loading()` and `success()` in a chained manner after calling `getUsers()`, making your code cleaner and more concise.
 
-## Configuration
+This chainable object offers the following methods:
 
-Both `globalConfig()`, `modulize()` and `request()` from moduleize accept 2 argumenst: `axiosConfig` and `maxiosConfig`.
+- `loading`: Accepts a callback function that is called when the loading state changes. The callback receives a `boolean` status representing the current loading state. It can return `false` to prevent higher-level callbacks from executing.
+- `requestError`: Accepts a callback function that is called when a request error occurs. The callback receives an `AxiosError` representing the error information. It can return `false` to prevent higher-level callbacks from executing.
+- `error`: Accepts a callback function called when the `expect` configuration in Maxios returns `false`. It receives an `OriginResult` representing the raw server response data. It can return `false` to prevent higher-level callbacks from executing.
+- `success`: Accepts a callback function called when the `expect` configuration in Maxios returns `true`. It receives a `FinalResult` representing the data extracted by the `extractor` configuration. It can return `false` to prevent higher-level callbacks from executing.
+- `anyway`: Accepts a callback function that is always called, regardless of the request's outcome. The callback receives two arguments: `result` (which could be an `AxiosResponse` or `AxiosError`) and `config` (representing the final request configuration). It can return `false` to prevent higher-level callbacks from executing.
+- `abort`: Used to cancel the request.
 
-> All places that accept a config object also accept a function that returns it
+## API Overview
 
-An axios config is a config that `axios.request()` needed. you can checkout [Axios](https://axios-http.com/docs/intro) for more details.
+Maxios provides the following APIs:
 
-A Maxios config object is like below:
+- `globalConfig(axiosConfig, maxiosConfig)`: Sets global request configurations. The first parameter is for Axios configurations, and the second is for Maxios configurations.
+- `modulize(axiosConfig, maxiosConfig)`: Obtains modularized request methods. The first parameter is for Axios configurations, and the second is for Maxios configurations. It returns a `request(axiosConfig, maxiosConfig)` method.
+- `request(axiosConfig, maxiosConfig)`: Method returned by `modulize()`, used to initiate requests. Its parameters are the same as those of `globalConfig()` and `modulize()`. It returns a chainable object as described above.
+- `race(requests)`: Sends multiple requests in a race condition, using the result of the first completed request. It accepts an array of chainable objects returned by `request()`. It also returns a chainable object.
+- `all(requests)`: Sends multiple requests simultaneously, using all results as its outcome. It accepts an array of chainable objects returned by `request()`. It also returns a chainable object.
 
-```typescript
-interface TMaxiosConfig {
-  expect?: TExpect<OriginResult>
-  extractor?: TExtractor<Payload, OriginResult, FinalResult>
-  request?: TRequest
-  cache?: {
-    type: TCacheType
-    key: string
-  }
-  loading?: TLoading
-  error?: TError<Payload, OriginResult>
-  requestError?: TRequestError<OriginResult>
-  success?: TSuccess<FinalResult>
-  anyway?: TAnyway
-}
-```
+When using the `request` method, specify the following generic types to enjoy complete type hints:
 
-* `isError`: a function which is used to indicate if the response data is correct or not. It accepts the origin response data as the only argument. If it's been omitted or if it returns `false`, then the `success` handler will be executed otherwise the `error` handlers will be executed. The default isError indicator is `() => false`
-* `extractor`: a function which is used to extract data from origin axios response data and the result will be pass to `success` handler. The default extractor is `(res: AxiosResponse<OriginResult, Payload>) => res.data`
-* `request`: a custome request fucntion. Maxios use `axios.request()` to send request to remote service by default, but if `request` is defined here it will use it instead. It accepts an axios request config object as the only argument and should return a promise instance
-* `cache`: specifies should maxios use caching for the response data
-  * `cache.type`: specifies which type of caching should maxios use to store the response data. It should be one of the `memory`, `session`(session storage) or `local`(local storage)
-  * `cache.key`: a key which is used to store the response data in cache
-* `loading`: a callback function which will be executed when fetch loading status changed. It recieves an argument `status` to indecate if it is loading right now
-* `requestError`: a callback function which will be executed when response status code is not right. It recieves an argument `axiosError`. And it can return `false` to stop Maxios to execute next `requestError` callbacks from upper layers
-* `error`: a callback function which will be executed when `isError` returns true. It recieves an argument `data` as the origin response data. And it can return `false` to stop Maxios to execut next `error` callbacks from upper layers
-* `success`: a callback function which will be executed when `indicator` returns true. It recieves an argument `data` as the final response data (the data has been handled by `extractor`).
-* `anyway`: a callback function which will be always executed.
+- `Payload`: The type of payload data sent in the request body.
+- `OriginResult`: The type of raw data returned by the request.
+- `FinalResult`: The type of extracted data after applying the `extractor`.
 
-### Configuration priorities
-
-There are 3 layers configuration that you can provide to a request with Maxios:
-
-```js
-- global
-  - module
-    - api-definition
-```
-
-In general, lower-level configurations take precedence over higher-level configurations. But some of it still has there own priorities or strategies.
-
-* `axiosConfig.baseURL`: all the baseURLs will join from low-level into high level. if baseURL from api config is `/get-sth`, and from module config is `/module-a`, and from global config is `/api`, then the final baseURL will be `/api/module-a/get-sth`
-* `axiosConfig.headers`: `headers` object will merge from low-level into high level. The final headers object is just like the result of `Object.assign({}, globalConfig.axiosConfig.headers, moduleConfig.axiosConfig.headers, apiConfig.axiosConfig.headers)`
-* `axiosConfig.params`: `params` object will merge from low-level into high level, the final params object is just like the result of `Object.assign({}, globalConfig.axiosConfig.params, moduleConfig.axiosConfig.params, apiConfig.axiosConfig.params)`
-* `axiosConfig.data`: the `data` property in axios config could be string, plain object, ArrayBuffer, ArrayBufferView, URLSearchParams, FormData, File, Blob, Stream or Buffer. Maxios will merge it from low-level to high level only when they are all **plain objects**, otherwise the high-level data will be replaced by the low-level data.
-* `maxiosConfig.loading`: all loading callbacks will executed from high level to low level(executing order is not that important).
-* `maxiosConfig.error`: error callbacks will executed from low level to high level. And if any of the callbacks do not return `true`, then the upper level callbacks will not be executed.
-* `maxiosConfig.bizError`: bizError callbacks will executed from low level to high level. And if any of the callbacks do not return `true`, then the upper level callbacks will not be executed.
-* `maxiosConfig.success`: all sucecss callback will executed from high level to low level.
-* `maxiosConfig.anyway`: all anyway callbacks will executed from high level to low level.
-
-## Callback Chain
-
-`request()` function from `modulize()` will return a chain object which contains `loading`,`error`,`bizError`,`success` and `anyway` functions. And all those functions will still return the chain object so that you can call those functions chainly.
-
-They are the same as the callbacks in configuration object. And the latter-called function has a higher level. They all follow the same priorities above.
-
-## Race and All
-
-You can handle multiple requests with `race()` or `all()` function. Just like bellow:
-
- ```ts
-all<[User[], Group[], Room[]]>([
-  userModel.getUsers({ gender: 'female' }),
-  groupModel.getGroups(),
-  roomModel.getRooms({ lang: 'zh' })
-])
-  .success((res) => {
-    console.log('---all success', res)
-  })
-  .anyway(() => {
-    console.log('---all anyway')
-  })
-
-race<User[] | Group[] | Room[]>([
-  userModel.getUsers({ gender: 'female' }),
-  groupModel.getGroups(),
-  roomModel.getRooms({ lang: 'zh' })
-])
-  .success((res) => {
-    console.log('---race success', res)
-  })
-  .anyway(() => {
-    console.log('---race anyway')
-  })
-```
-
-## Retry Requests
-
-
-## `toPromise()`
-
-Sometimes you will need to convert a request chain object to a standard promise instance, then `toPromise()` function will be a handy util for you.
+To dynamically generate configurations for each request, use a function instead of a static object:
 
 ```ts
-toPromise(userModel.getUsers({ gender: 'female' }))
-  .then(res => console.log('to promise res', res))
-  .catch(error => console.log('to promise error', error))
-  .finally(() => console.log('to promise finally'))
+globalConfig(() => ({
+  baseUrl: 'api',
+  headers: {
+    token: localStorage.getItem('auth-token')
+  }
+}))
 ```
 
-> ATTENTION: the request chain object should return not return `false` in it's `error` or `requestError` handler if it will be wrapped by `toPromise()`. Otherwise the promise instance will not work as we expected.
+## Axios Configuration Merging Strategy
 
-## Migration from V1
+Refer to the [Axios documentation](https://axios-http.com) for details on `axiosConfig` options.
 
-TODO:
+In general, Maxios merges configurations based on the "lower level has higher priority" strategy, i.e., `request > modulize > globalConfig`. Most Axios configuration fields are replaced directly by higher-priority configurations, but some have different merging strategies:
+
+- `baseURL`: Uses a "Path Join" strategy, joining paths from higher to lower levels. For example, if `/api` is set in `globalConfig`, `/setting` in `modulize`, and `/role` in `request`, the final `baseURL` will be `/api/setting/role`.
+- `headers`: Merges all levels using `Object.assign`.
+- `params`: Merges all levels using `Object.assign`.
+- `data`: Merges all levels using `Object.assign`, unless any level specifies non-object data, in which case the non-object data takes precedence.
+
+## Advanced Configurations
+
+Maxios also offers advanced configurations to handle complex scenarios effectively.
+
+### Retry Requests
+
+Maxios provides a request retry mechanism. You can specify conditions under which a request should be retried. This is particularly useful for implementing token refresh mechanisms or handling intermittent network issues.
+
+- `retryWhen`: Defines retry logic.
+  - `retryWhen.requestSuccess`: Logic for retrying after a successful request.
+    - `beforeRetry`: An optional callback executed before each retry.
+    - `condition`: A function determining whether to retry based on the response.
+    - `retryOthers`: Indicates whether to cancel and retry other pending requests.
+    - `maximumCount`: Specifies the maximum number of retries.
+  - `retryWhen.requestError`: Logic for retrying after a failed request.
+    - `beforeRetry`: An optional callback executed before each retry.
+    - `condition`: A function determining whether to retry based on the error.
+    - `retryOthers`: Indicates whether to cancel and retry other pending requests.
+    - `maximumCount`: Specifies the maximum number of retries (default is 1).
+
+### Response Caching
+
+Maxios includes a response caching mechanism to reduce redundant requests for frequently accessed, rarely updated data. Use the `cache` configuration to enable caching:
+
+- `cache.type`: Specifies the cache type (`memory`, `session`, or `local`).
+- `cache.key`: Defines the cache key for identifying and storing responses.
+
+### Custom Request Methods
+
+Maxios defaults to using `axios.request()` for making HTTP requests. If you need to customize the request method, such as for adding performance tracking or error monitoring, you can define a custom request handler using the `maxiosConfig.request` option. The custom request function should have the following signature:
+
+```ts
+type TRequest = <T = unknown, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>) => Promise<R>
+```
+
+## Migration from V1 to V2
+
+If you are upgrading from V1 to V2, consider the following changes:
+
+1. `global()` has been renamed to `globalConfig()`, and its parameters have been split into two: `axiosConfig` and `maxiosConfig`.
+2. `modulize()` and `request()` now accept two parameters: `axiosConfig` and `maxiosConfig`.
+3. The callback for handling request errors has been renamed from `maxiosConfig.error` to `maxiosConfig.requestError`, and the return value for halting higher-level callbacks has changed from `true` to `false`.
+4. The `indicator` function for determining whether a response meets expectations has been renamed to `expect`.
+5. The callback for handling responses that do not meet expectations has been renamed from `maxiosConfig.bizError` to `maxiosConfig.error`, and the return value for halting higher-level callbacks has changed from `true` to `false`.
+6. Callback execution order for `loading`, `success`, and `anyway` has been adjusted from high-level to low-level, with the ability to interrupt higher-level callbacks by returning `false`.
+
+## Ecosystem
+
+Maxios provides additional tools for integrating with React and Vue frameworks:
+
+- [maxios-react](https://github.com/BboyAwey/maxios-react): A React hook-based integration.
+- [maxios-vue](https://github.com/BboyAwey/maxios-vue): A Vue Composition API integration.
