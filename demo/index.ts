@@ -1,5 +1,5 @@
 // import { AxiosResponse } from 'axios'
-import { all, globalConfig, modulize, race, toPromise } from '../src'
+import { globalConfig, modulize } from '../src'
 
 interface Response<T> {
   code: number
