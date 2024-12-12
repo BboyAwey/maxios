@@ -87,15 +87,12 @@ export class Maxios<
         })
       })
     } else {
-      console.log('add to processing', this.#configManager.apiConfig.axiosConfig?.url)
       const requestID = uuid()
       this.#requestID = requestID
       processingMaxiosInstances.add(this)
       // send request
       request<OriginResult, AxiosResponse<OriginResult, Payload>, Payload>(axiosConfig)
         .then(res => {
-          console.log('then --', this.#configManager.apiConfig.axiosConfig?.url)
-          console.log('--delete from processing', this.#configManager.apiConfig.axiosConfig?.url)
           if (requestID === this.#requestID) processingMaxiosInstances.delete(this)
           this.#processorManager.executeLoadingProcessors()
           nextTick(() => {
@@ -110,7 +107,6 @@ export class Maxios<
               )
             ) {
               this.#retryCount++
-              console.log('start retry ---',  this.#configManager.apiConfig.axiosConfig?.url)
               this.#startRetry(
                 retryConfig.retryWhen.requestSuccess.retryOthers === 'module'
                   ? 'module'
@@ -126,7 +122,6 @@ export class Maxios<
               }
               // check if the response is expected
               const hasError = !this.#configManager.getNearestCallback('expect', () => false)(res)
-              console.log('has error:', hasError)
               if (!hasError) {
                 // use extractor
                 const extractor = this.#configManager.getNearestCallback(
@@ -151,12 +146,12 @@ export class Maxios<
           })
         })
         .catch(err => {
-          console.log('catch-- ', this.#configManager.apiConfig.axiosConfig?.url, axios.isCancel(err))
           if (requestID === this.#requestID) processingMaxiosInstances.delete(this)
-          console.log('--delete from processing', this.#configManager.apiConfig.axiosConfig?.url, axios.isCancel(err))
 
           this.#processorManager.executeLoadingProcessors()
-          if (axios.isCancel(err)) return
+          if (axios.isCancel(err)) {
+            this.#processorManager.executeAnywayProcessors(err as AxiosError, axiosConfig)
+          }
           
           nextTick(() => {
             if (
@@ -192,7 +187,6 @@ export class Maxios<
   }
 
   abort () {
-    console.log('abort',  this.#configManager.apiConfig.axiosConfig?.url)
     this.#abortController?.abort()
   }
 
@@ -200,27 +194,23 @@ export class Maxios<
     retryLevel: 'api' | 'module' | 'global',
     retryWhenConfig: IRetryWhen<AxiosResponse<OriginResult, Payload>> | IRetryWhen<AxiosError<OriginResult, Payload>>
   ) {
-    console.log('--equeue', this.#configManager.apiConfig.axiosConfig?.url)
     retryQueue.enqueue(this)
 
     if (retryLevel === 'module') {
       // retry all processing instance in the same module
       for (const instance of processingMaxiosInstances) {
         if (instance.module === this.module) {
-          console.log('--equeue', instance.#configManager.apiConfig.axiosConfig?.url)
           retryQueue.enqueue(instance)
         }
       }
     } else if (retryLevel === 'global') {
       // retry all processing instance
       for (const instance of processingMaxiosInstances) {
-        console.log('--equeue', instance.#configManager.apiConfig.axiosConfig?.url)
         retryQueue.enqueue(instance)
       }
     }
 
     retryQueue.walk(instance => {
-      console.log('--delete from processing', instance.#configManager.apiConfig.axiosConfig?.url)
       processingMaxiosInstances.delete(instance)
       instance.abort()
     })
@@ -232,11 +222,9 @@ export class Maxios<
 
         if (beforeRetryResult instanceof Promise) {
           beforeRetryResult.then(() => {
-            console.log('do retry',  this.#configManager.apiConfig.axiosConfig?.url)
             retryQueue.retry()
           })
         } else {
-          console.log('do retry',  this.#configManager.apiConfig.axiosConfig?.url)
           retryQueue.retry()
         }
         beforeRetry()
