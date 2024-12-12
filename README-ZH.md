@@ -5,7 +5,7 @@ Maiox是一个基于[Axios](https://axios-http.com)封装的，用于请求数�
 
 ## 动机
 
-尽管市面上同类型的库不计其数，但在日常开发中我还没有见到任何一个库能够对请求的各类常用配置进行分层管理的。举个简单例子，当你想要进行错误处理时，通常如果直接使用Axios，你可能会使用它的拦截器来做全局的通用错误处理（错误提示等）。但在一些特殊的场景下，你可能希望某些请求自行处理错误，而不要出发全局的错误处理逻辑。又或者你希望为某些模块添加一些特殊的错误处理逻辑，同时也希望全局的错误处理逻辑能够正常工作。凡此总总，如果能对请求的常用配置进行分层管理，并在任何时候都可以控制上层的配置是否生效，那么使用Maxios就是你最好的选择。
+尽管市面上同类型的库不计其数，但在日常开发中我还没有见到任何一个库能够对请求的各类常用配置进行分层管理的。举个简单例子，当你想要进行错误处理时，通常如果直接使用Axios，你可能会使用它的拦截器来做全局的通用错误处理（错误提示等）。但在一些特殊的场景下，你可能希望某些请求自行处理错误，而不要触发全局的错误处理逻辑。又或者你希望为某些模块添加一些特殊的错误处理逻辑，同时也希望全局的错误处理逻辑能够正常工作。凡此总总，如果能对请求的常用配置进行分层管理，并在任何时候都可以控制上层的配置是否生效，那么使用Maxios就是你最好的选择。
 
 ## 安装和引入
 
@@ -110,11 +110,11 @@ export const createUser = (userInfo: UserInfo) => {
 import { useState } from 'react'
 import userModel, { User } from 'model/user'
 
-// 推荐将Model作为对象返回是因为这样你的业务代码可读性更强
-// 同时你的方法也因为有Model前缀，可以更简洁地进行命名
 const [usersLoading, setUsersLoading] = useState(false)
 const [users, serUsers] = useState<User[]>([])
 
+// 推荐将Model作为对象返回是因为这样你的业务代码可读性更强
+// 同时你的方法也因为有Model前缀，可以更简洁地进行命名
 userModel.getUsers({ name: 'Tony'})
   .loading(setUsersLoading)
   .success(setUsers)
@@ -126,11 +126,11 @@ userModel.getUsers({ name: 'Tony'})
 
 这个支持链式调用方法的对象，提供了下列方法供你使用：
 
-* `loading`：该方法接受一个回调函数，该回调函数会在请求的loading状态变化时被调用；回调函数接受一个`boolean`类型的 `status` 参数来表示当前的loading状态
-* `requestError`：该方法接受一个回调函数，该回调函数会在请求发生错误时被调用；回调函数接受一个`AxiosError`类型 `axiosError`参数来表示当前的错误信息
-* `error`：该方法接受一个回调函数，该回调函数会在Maxios配置中的`expect`返回`false`时被调用；它接受一个类型为`OriginResult`的`data`参数来表示服务器返回的原始数据
-* `success`：该方法接受一个回调函数，该回调函数会在Maxios配置中的`expect`返回`true`时被调用；它接受一个类型为`FinalResult`的`data`参数来表示从服务器返回的结果中被Maios配置中的`extractor`提取出来的数据
-* `anyway`：该方法接受一个回调函数，无论请求发生了什么，该回函数总是会被调用；回调函数接有两个参数，第一个参数`result`用于表示请求的结果，它可能是一个`AxiosResponse`，也可能是一个`AxiosError`，第二个参数`config`用于表示当前请求最终使用的配置信息
+* `loading`：该方法接受一个回调函数，该回调函数会在请求的loading状态变化时被调用；回调函数接受一个`boolean`类型的 `status` 参数来表示当前的loading状态；它可以返回`false`来阻止更高层级的回调函数的执行
+* `requestError`：该方法接受一个回调函数，该回调函数会在请求发生错误时被调用；回调函数接受一个`AxiosError`类型 `error`参数来表示当前的错误信息；它可以返回`false`来阻止更高层级的回调函数的执行
+* `error`：该方法接受一个回调函数，该回调函数会在Maxios配置中的`expect`返回`false`时被调用；它接受一个类型为`OriginResult`的`data`参数来表示服务器返回的原始数据；它可以返回`false`来阻止更高层级的回调函数的执行
+* `success`：该方法接受一个回调函数，该回调函数会在Maxios配置中的`expect`返回`true`时被调用；它接受一个类型为`FinalResult`的`data`参数来表示从服务器返回的结果中被Maios配置中的`extractor`提取出来的数据；它可以返回`false`来阻止更高层级的回调函数的执行
+* `anyway`：该方法接受一个回调函数，无论请求发生了什么，该回函数总是会被调用；回调函数接有两个参数，第一个参数`result`用于表示请求的结果，它可能是一个`AxiosResponse`，也可能是一个`AxiosError`，第二个参数`config`用于表示当前请求最终使用的配置信息；它可以返回`false`来阻止更高层级的回调函数的执行
 * `abort`：该方法用于取消请求
 
 ## API一览
@@ -139,7 +139,7 @@ Maxios提供了下列API：
 
 * `globalConfig(axiosConfig, MaxiosConfig)`：该方法用于设置全局请求配置，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置
 * `modulize(axiosConfig, maxiosConfig)`：该方法用于获取模块化的请求方法，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置，它会返回一个`request(axiosConfig, maxiosConfig)`方法
-* `modulize().request(axiosConfig, maxiosConfig)`：`modulize()`返回的方法，该方法用于发起请求；它所接受的参数和`globalConfig()`、`modulize()`一样，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置；它会返回一个上文已经介绍过的链式调用对象
+* `request(axiosConfig, maxiosConfig)`：`modulize()`返回的方法，该方法用于发起请求；它所接受的参数和`globalConfig()`、`modulize()`一样，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置；它会返回一个上文已经介绍过的链式调用对象
 * `race(requests)`：该方法用于将多个请求以竞态的方式进行请求，以最先返回的请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
 * `all(requests)`：该方法用于同时发起多个请求，并以所有请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
 
@@ -166,7 +166,7 @@ globalConfig(() => ({
 
 > `axiosConfig`请参考[Axios](https://axios-http.com)官网。
 
-如上文所述，你可以通过不同的Maxios API，为同一个请求在不同的层级上配置和管理Axios。这也是Maxios的核心目的和功能。
+如上文所述，你可以通过不同的Maxios API，为同一个请求在不同的层级上管理Axios的配置信息。这也是Maxios的核心目的和功能。
 
 Axios的配置项非常多，但在一般情况下Maxios遵守“层级越低，优先级越高”的策略来合并各层配置。具体来说，就是`request > modulize > globalConfig`。大部分处于Axios配置对象中的配置都会直接被高优先级的同名配置直接替换（replace）掉，但有一些特殊的配置，Maxios采用了不同的合并策略。
 
@@ -179,13 +179,13 @@ Axios的配置项非常多，但在一般情况下Maxios遵守“层级越低，
 
 `globalConfig`、`modulize`和`request`的第二个参数`maxiosConfig`表示的是提供给Maxios的配置对象。Maxios支持下列常用配置：
 
-* `requestError: AxiosError => void`：当请求发生错误时（无法获取到响应数据），你可能希望做一些处理（比如提示用户请求失败了），可以使用`requestError`配置一个回调函数进行处理；回调函数接受一个表示请求错误信息的`AxiosError`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
+* `requestError: AxiosError => boolean | void`：当请求发生错误时（无法获取到响应数据），你可能希望做一些处理（比如提示用户请求失败了），可以使用`requestError`配置一个回调函数进行处理；回调函数接受一个表示请求错误信息的`AxiosError`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
 * `expect: AxiosResponse => boolean`：用于判定请求返回的响应是否符合预期的回调函数，如果返回`false`，则认为响应不符合预期，Maxios会调用下文的`error()`配置的回调函数；如果返回`true`，则认为响应符合预期，则`sucess`配置的回调函数会被调用；回调函数接受一个表示响应信息的`AxiosResponse`作为唯一参数
-* `error: OriginResult => void`：当请求返回了不符合预期的数据后，如果你需要处理这种情况，则可以使用`error`来配置一些回调函数进行处理；回调函数接受一个表示原始响应数据（从响应信息对象中获取到的）的`OriginResult`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
+* `error: OriginResult => boolean | void`：当请求返回了不符合预期的数据后，如果你需要处理这种情况，则可以使用`error`来配置一些回调函数进行处理；回调函数接受一个表示原始响应数据（从响应信息对象中获取到的）的`OriginResult`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
 * `extractor: OriginResult => FinalResult`：当请求返回的数据符合预期时，可能数据中最外层会有一些通用的结构，而`success`的处理逻辑可能并不关心这些通用的结构，这时你可以使用`extractor`来剥离外层结构提取业务数据；回调函数接受一个表示原始返回数据的`OriginResult`参数，它需要返回提取后的业务数据；默认的提取逻辑是直接提取原始响应数据
-* `success: FinalResult => void`：当请求返回了符合预期的数据后，你的后续业务逻辑可以使用`success`来处理；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
-* `loading: Boolean => void`：该配置用于指示请求的loading状态；当请求的loading状态变化时，这个回调函数会被调用；回调函数接受一个表示当前是否正在loading的`boolean`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
-* `anyway: (AxiosResponse | AxiosError) => void`：无论请求的结果如何，该回调函数始终会在请求结束后被调用；回调函数接受一个唯一参数，用于表示响应信息或者响应错误信息；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
+* `success: FinalResult => boolean | void`：当请求返回了符合预期的数据后，你的后续业务逻辑可以使用`success`来处理；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
+* `loading: Boolean => boolean | void`：该配置用于指示请求的loading状态；当请求的loading状态变化时，这个回调函数会被调用；回调函数接受一个表示当前是否正在loading的`boolean`作为唯一参数；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
+* `anyway: (AxiosResponse | AxiosError) => boolean | void`：无论请求的结果如何，该回调函数始终会在请求结束后被调用；回调函数接受一个唯一参数，用于表示响应信息或者响应错误信息；前文中的链式调用对象上也提供了同名的方法，其作用与此一致
 
 ### Maxios常用配置的优先级策略
 
@@ -244,6 +244,17 @@ Maxios默认使用`axios.request()`来发起请求。某些情况下（比如你
 ```ts
 type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosRequestConfig<D>) => Promise<R>
 ```
+
+## 从V1迁移到V2
+
+如果你是从V1升级到V2版本，可以按照下面的清单来检查你需要修改的地方：
+
+1. `global()`更名为`globalConfig()`，且参数由一个变为两个，`axiosConfig`从`maxiosConfig`中独立出来，成为第一个参数
+2. `mudulize()`和`request()`的参数由一个变为两个，`axiosConfig`从`maxiosConfig`中独立出来，成为第一个参数
+3. 请求发生错误时的回调函数配置`maxiosConfig.error`更名为`maxiosConfig.requestError`，且打断后续层级执行的返回值由原来的`true`变更为`false`
+4. 响应是否符合预期的判断函数`indicator`更名为`expect`
+5. 响应不符合预期时的回调函数配置`maxiosConfig.bizError`更名为`maxiosConfig.error`，且打断后续层级执行的返回值由原来的`true`变更为`false`
+6. `loading`、`success`和`anyway`的回调函数执行顺序变更为从低层级到高层级，且增加了返回`false`来打断后续层级执行的能力
 
 ## TODO: 周边
 
