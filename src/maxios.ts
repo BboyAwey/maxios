@@ -223,14 +223,19 @@ export class Maxios<
         if (beforeRetryResult instanceof Promise) {
           beforeRetryResult.then(() => {
             retryQueue.retry()
+          }).finally(() => {
+            retryQueue.clear()
           })
         } else {
-          retryQueue.retry()
+          if (beforeRetryResult === false) {
+            retryQueue.clear()
+          } else {
+            retryQueue.retry()
+          }
         }
-        beforeRetry()
-          
       } catch (err) {
         console.warn('beforeRetry error:', err)
+        retryQueue.clear()
       }
     } else {
       retryQueue.retry()

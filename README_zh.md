@@ -218,7 +218,7 @@ Maxios提供了请求重试的功能。你可以指定在一定条件下，对�
 
 * `retryWhen`：请求的重试逻辑
   * `retryWhen.requestSuccess`：请求成功后的重试逻辑
-    * `retryWhen.requestSuccess.beforeRetry?: () => Promise | void`：每次重试前需要执行的逻辑
+    * `retryWhen.requestSuccess.beforeRetry?: () => Promise | boolean | void`：每次重试前需要执行的逻辑，如果返回了返回了`Promise.reject()`或者`false`，则后续的重试逻辑将被停止
     * `retryWhen.requestSuccess.condition?: AxiosResponse => boolean`：重试条件
     * `retryWhen.requestSuccess.retryOthers?: boolean | 'module' | 'global'`：重试时是否要取消并重试其它正在发起的请求
     * `retryWhen.requestSuccess.maximumCount?: number`：最大重试次数
