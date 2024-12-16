@@ -180,7 +180,7 @@ Maxios provides a request retry mechanism. You can specify conditions under whic
 
 - `retryWhen`: Defines retry logic.
   - `retryWhen.requestSuccess`: Logic for retrying after a successful request.
-    - `beforeRetry`: An optional callback executed before each retry.
+    - `beforeRetry`: An optional callback executed before each retry. If it returns `Promise.reject()` or `false`, all the retry logic will be stopped.
     - `condition`: A function determining whether to retry based on the response.
     - `retryOthers`: Indicates whether to cancel and retry other pending requests.
     - `maximumCount`: Specifies the maximum number of retries.

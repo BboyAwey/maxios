@@ -18,4 +18,8 @@ export class RetryQueue {
   walk (fn: (item: Maxios, index: number) => void) {
     this.#queue.forEach(fn)
   }
+
+  clear () {
+    this.#queue = []
+  }
 }

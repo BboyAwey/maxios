@@ -29,7 +29,7 @@ export type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: Axi
 export type TNearestCallbackName = 'extractor' | 'expect' | 'request'
 
 export interface IRetryWhen<T> {
-  beforeRetry?: () => Promise<any> | void
+  beforeRetry?: () => Promise<any> | boolean | void
   condition?: (res: T) => boolean
   retryOthers?: boolean | 'module' | 'global'
   maximumCount?: number
