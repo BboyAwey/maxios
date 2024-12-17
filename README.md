@@ -1,7 +1,3 @@
-Certainly! Below is the translated content from **README_zh.md** into English, which you can use to replace the content in **README.md**.
-
-**File: /Users/admin/Documents/projects/maxios/README.md**
-```markdown
 # Maxios
 
 Maxios is a library based on [Axios](https://axios-http.com) for making data requests. Its main function is to layer Axios configurations and merge them using the most common logic (merge/join/replace, etc.).
