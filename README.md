@@ -252,4 +252,12 @@ If you are upgrading from V1 to V2, you can check the following checklist for th
 2. The parameters of `modulize()` and `request()` have changed from one to two, with `axiosConfig` separated from `maxiosConfig` as the first parameter
 3. The callback function configuration for request errors `maxiosConfig.error` is renamed to `maxiosConfig.requestError`, and the return value for interrupting subsequent level execution has changed from `true` to `false`
 4. The function for determining whether the response meets expectations `indicator` is renamed to `expect`
-5. The callback function configuration 
+5. The callback function configuration for unexpected response `maxiosConfig.bizError` is renamed to `maxiosConfig.error`, and the return value for interrupting subsequent level execution has changed from `true` to `false`
+6. The excution order of callback functions `loading`, `success` and `anyway` has been changed to 'down-to-up', and add add the ability of interruption subsuquent level execution by return `false`
+
+## Related Tools
+
+Additionally, Maxios offers converters based on React Hooks and Vue Composition styles, making it more convenient to use Maxios in real-world applications.
+
+* [maxios-react](https://github.com/BboyAwey/maxios-react)
+* [maxios-vue](https://github.com/BboyAwey/maxios-vue)
