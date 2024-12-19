@@ -8,7 +8,7 @@ export type TSuccess<Result> = (data: Result) => void | boolean
 export type TAnyway = (result?: AxiosResponse | AxiosError, config?: AxiosRequestConfig) => void | boolean
 
 export type TProcessorNames = Partial<Record<
-  'loading' | 'error' | 'bizError' | 'success' | 'anyway',
+  'loading' | 'error' | 'requestError' | 'success' | 'anyway',
   any
 >>
 export interface IProcessorsChain<Payload, OriginResult, FinalResult> extends TProcessorNames {
