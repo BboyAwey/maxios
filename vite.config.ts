@@ -12,6 +12,15 @@ export default defineConfig({
       name: packageInfo.name,
       formats: ['es', 'umd', 'cjs'],
       fileName: 'maxios'
+    },
+    rollupOptions: {
+      external: Object.keys(packageInfo.dependencies || []),
+      output: {
+        globals: {
+          '@awey/dache': 'Dache',
+          'axios': 'Axios'
+        }
+      }
     }
   },
   plugins: [dts()],
