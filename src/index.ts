@@ -50,6 +50,7 @@ export const race = <Result = any>(
   const pm = new ProcessorManager<any, any, Result>()
   let isSuccessfull = false
   let count = requests.length
+  pm.executeLoadingProcessors(true)
 
   requests.forEach(req => {
     req.success(res => {
@@ -62,7 +63,7 @@ export const race = <Result = any>(
     req.anyway((res, config) => {
       count -= 1
       if (!count) {
-        pm.executeLoadingProcessors()
+        pm.executeLoadingProcessors(false)
         pm.executeAnywayProcessors(res, config)
       }
     })
@@ -85,6 +86,7 @@ export const all = <Result = any[]>(
   let successfullCount = requests.length
   let anywayCount = requests.length
   const result = [] as any[]
+  pm.executeLoadingProcessors(true)
 
   requests.forEach((req, i) => {
     req.success(res => {
@@ -98,7 +100,7 @@ export const all = <Result = any[]>(
     req.anyway((res, config) => {
       anywayCount -= 1
       if (!anywayCount) {
-        pm.executeLoadingProcessors()
+        pm.executeLoadingProcessors(false)
         pm.executeAnywayProcessors(res, config)
       }
     })
