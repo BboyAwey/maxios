@@ -72,8 +72,11 @@ export class Maxios<
     // init abort controller on every request for multiple retry cancel
     this.#abortController = new AbortController()
     axiosConfig.signal = this.#abortController.signal
+    
+    nextTick(() => {
+      this.#processorManager.executeLoadingProcessors(true)
+    })
 
-    this.#processorManager.executeLoadingProcessors(true)
 
     if (cacheConfig && daches[cacheConfig.type].has(cacheConfig.key)) {
       // retrieve res from cache
