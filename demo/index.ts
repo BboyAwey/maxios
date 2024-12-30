@@ -63,7 +63,8 @@ const apis = {
             return res.data.code === 0
           }
         }
-      }
+      },
+      loading: status => console.log('loading...', status)
     })
   },
   getShit2 () {
