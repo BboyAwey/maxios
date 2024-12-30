@@ -31,6 +31,7 @@ globalConfig<Response<unknown>>(
     extractor (response) {
       return response.data.data
     },
+    loading: status => console.log('global loading...', status)
   }
 )
 
@@ -39,7 +40,10 @@ const request = modulize(
     headers: {
       'XXXX-MODULE': 'header from module'
     }
-  })
+  }),
+  {
+    loading: status => console.log('module loading...', status)
+  }
 )
 const apis = {
   getShit () {
@@ -80,10 +84,17 @@ function sendRequest () {
   apis.getShit2()
 }
 
+function sendRequest2 () {
+  apis.getShit2()
+    .loading(res => console.log('loading 1...', res))
+    .loading(res => console.log('loading 2...', res))
+    .loading(res => console.log('loading 3...', res))
+}
+
 window.addEventListener('load', () => {
   const button = document.createElement('button')
   button.innerText = '发送请求'
-  button.addEventListener('click', sendRequest)
+  button.addEventListener('click', sendRequest2)
 
   document.body.appendChild(button)
 })
