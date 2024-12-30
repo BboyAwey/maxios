@@ -83,8 +83,6 @@ class ProcessorManager<
       const k = key as keyof TProcessorNames
       if (config[k] instanceof Function) {
         this.#processors[k].push(config[k] as any)
-        // if it is loading processor, execute it first
-        k === 'loading' && (config[k]!)(true)
       }
     }
   }
