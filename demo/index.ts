@@ -94,9 +94,16 @@ function sendRequest2 () {
 window.addEventListener('load', () => {
   const button = document.createElement('button')
   button.innerText = '发送请求'
-  button.addEventListener('click', sendRequest2)
+  button.addEventListener('click', sendRequest)
 
   document.body.appendChild(button)
+
+  const button2 = document.createElement('button')
+  button2.innerText = '发送请求2'
+  button2.addEventListener('click', sendRequest2)
+
+  document.body.appendChild(button2)
+  
 })
 
 
