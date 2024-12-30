@@ -33,11 +33,11 @@ class ProcessorManager<
 
   #abortCallback = () => {}
 
-  executeLoadingProcessors () {
+  executeLoadingProcessors (status: boolean) {
     const processors = [...this.#processors.loading].reverse()
     for (const fn of processors) {
       try {
-        if (fn(false) === false) break
+        if (fn(status) === false) break
       } catch (err) { console.warn(err) }
     }
   }
@@ -96,8 +96,6 @@ class ProcessorManager<
   chain () {
     const chain: IProcessorsChain<Payload, OriginResult, FinalResult> = {
       loading: (fn: TLoading) => {
-        // execute loading processor first
-        fn(true)
         this.#processors.loading.push(fn)
         return chain
       },

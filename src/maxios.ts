@@ -73,10 +73,12 @@ export class Maxios<
     this.#abortController = new AbortController()
     axiosConfig.signal = this.#abortController.signal
 
+    this.#processorManager.executeLoadingProcessors(true)
+
     if (cacheConfig && daches[cacheConfig.type].has(cacheConfig.key)) {
       // retrieve res from cache
       nextTick(() => {
-        this.#processorManager.executeLoadingProcessors()
+        this.#processorManager.executeLoadingProcessors(false)
         nextTick(() => {
           const result = daches[cacheConfig.type].get(cacheConfig.key)!
           this.#processorManager.executeSuccessProcessors(result)
@@ -94,7 +96,7 @@ export class Maxios<
       request<OriginResult, AxiosResponse<OriginResult, Payload>, Payload>(axiosConfig)
         .then(res => {
           if (requestID === this.#requestID) processingMaxiosInstances.delete(this)
-          this.#processorManager.executeLoadingProcessors()
+          this.#processorManager.executeLoadingProcessors(false)
           nextTick(() => {
             // retry when success
             if (
@@ -148,7 +150,7 @@ export class Maxios<
         .catch(err => {
           if (requestID === this.#requestID) processingMaxiosInstances.delete(this)
 
-          this.#processorManager.executeLoadingProcessors()
+          this.#processorManager.executeLoadingProcessors(false)
           if (axios.isCancel(err)) {
             this.#processorManager.executeAnywayProcessors(err as AxiosError, axiosConfig)
           }
