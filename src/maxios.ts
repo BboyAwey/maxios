@@ -42,7 +42,7 @@ export class Maxios<
   #retryCount: number = 0
   #requestID: string = ''
 
-  module: string | number | undefined = undefined
+  moduleId: string | number | undefined = undefined
 
   constructor (
     config: IMaxiosConstructorConfig<Payload, OriginResult, FinalResult>,
@@ -50,7 +50,7 @@ export class Maxios<
   ) {
     // save config
     this.#configManager = new ConfigManager<Payload, OriginResult, FinalResult>(config)
-    this.module = module
+    this.moduleId = module
 
     // load processors
     this.#processorManager.loadProcessorFromMaxiosConfig(ConfigManager.getGlobalConfig())
@@ -77,13 +77,12 @@ export class Maxios<
       this.#processorManager.executeLoadingProcessors(true)
     })
 
-
-    if (cacheConfig && daches[cacheConfig.type].has(cacheConfig.key)) {
+    if (cacheConfig && daches[cacheConfig.type].has(this.#getFinalCacheKey(cacheConfig.key))) {
       // retrieve res from cache
       nextTick(() => {
         this.#processorManager.executeLoadingProcessors(false)
         nextTick(() => {
-          const result = daches[cacheConfig.type].get(cacheConfig.key)!
+          const result = daches[cacheConfig.type].get(this.#getFinalCacheKey(cacheConfig.key))!
           this.#processorManager.executeSuccessProcessors(result)
           nextTick(() => {
             // make sure anyway processor is been executed after any other processors
@@ -141,7 +140,7 @@ export class Maxios<
 
                 // cache result
                 if (cacheConfig) {
-                  daches[cacheConfig.type].set(cacheConfig.key, extractRes)
+                  daches[cacheConfig.type].set(this.#getFinalCacheKey(cacheConfig.key), extractRes)
                 }
               } else {
                 this.#processorManager.executeErrorProcessors(res)
@@ -195,6 +194,10 @@ export class Maxios<
     this.#abortController?.abort()
   }
 
+  #getFinalCacheKey (cacheKey: string) {
+    return `${this.moduleId}_${cacheKey}`
+  }
+
   #startRetry (
     retryLevel: 'api' | 'module' | 'global',
     retryWhenConfig: IRetryWhen<AxiosResponse<OriginResult, Payload>> | IRetryWhen<AxiosError<OriginResult, Payload>>
@@ -204,7 +207,7 @@ export class Maxios<
     if (retryLevel === 'module') {
       // retry all processing instance in the same module
       for (const instance of processingMaxiosInstances) {
-        if (instance.module === this.module) {
+        if (instance.moduleId === this.moduleId) {
           retryQueue.enqueue(instance)
         }
       }
