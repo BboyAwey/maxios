@@ -121,7 +121,7 @@ export class Maxios<
                 return
               }
               // check if the response is expected
-              const hasError = !this.#configManager.getNearestCallback('expect', () => false)(res)
+              const hasError = !this.#configManager.getNearestCallback('expect', () => true)(res)
               if (!hasError) {
                 // use extractor
                 const extractor = this.#configManager.getNearestCallback(
