@@ -103,7 +103,7 @@ class ConfigManager<
       }
     }
 
-    // data could be string, plain object, ArrayBuffer, ArrayBufferView, URLSearchParams
+    // data could be string, plain object, array, ArrayBuffer, ArrayBufferView, URLSearchParams
     const dataList = [
       this.apiConfig.axiosConfig?.data,
       this.moduleConfig.axiosConfig?.data,
@@ -114,7 +114,7 @@ class ConfigManager<
     for (const d of dataList) {
       if (d) {
         // data is not plain object
-        if ((d as any).toString() !== '[object Object]') {
+        if (Object.prototype.toString.call(d) !== '[object Object]') {
           finalData = d
           break
         } else {
