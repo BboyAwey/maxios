@@ -90,7 +90,7 @@ class ConfigManager<
     for (const d of dataList) {
       if (d) {
         // data is not plain object
-        if ((d as any).toString() !== '[object Object]') {
+        if (Object.prototype.toString.call(d) !== '[object Object]') {
           finalData = d
           break
         } else {
