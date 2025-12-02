@@ -1,5 +1,4 @@
-// import { AxiosResponse } from 'axios'
-import { globalConfig, modulize } from '../src'
+import { globalConfig, modulize, race, all } from '../src'
 
 interface Response<T> {
   code: number
@@ -7,135 +6,493 @@ interface Response<T> {
   msg: string
 }
 
-// globalConfig({
-//   baseURL: 'http://localhost:3000'
-// })
+interface User {
+  id: number
+  name: string
+  age: number
+}
 
-// let num = 0
-
-// setInterval(() => {
-//   num = Math.round(Math.random() * 1000)
-// }, 1000)
-
+// ========== 全局配置 ==========
 globalConfig<Response<unknown>>(
   {
     baseURL: '/api',
     headers: {
-      'XXXX-GLOBAL': 'header from global'
+      'X-Global-Header': 'from-global-config'
     }
   },
   {
-    expect (response) {
+    expect(response) {
       return response.data.code === 0
     },
-    extractor (response) {
+    extractor(response) {
       return response.data.data
     },
-    loading: status => console.log('global loading...', status),
-    error: (data) => console.log('global error...', data),
+    loading: (status) => {
+      console.log('[Global] Loading:', status)
+      updateLog(`[Global] Loading: ${status}`)
+    },
+    error: (data) => {
+      console.log('[Global] Business Error:', data)
+      updateLog(`[Global] Business Error: ${JSON.stringify(data)}`)
+    },
+    requestError: (err) => {
+      console.log('[Global] Request Error:', err.message)
+      updateLog(`[Global] Request Error: ${err.message}`)
+    }
   }
 )
 
-const request = modulize(
-  () => ({
-    headers: {
-      'XXXX-MODULE': 'header from module'
-    }
-  }),
+// ========== 模块化请求 ==========
+const userRequest = modulize<Response<unknown>>(
   {
-    loading: status => console.log('module loading...', status)
+    headers: {
+      'X-Module-Header': 'from-module-config'
+    }
+  },
+  {
+    loading: (status) => {
+      console.log('[Module] Loading:', status)
+      updateLog(`[Module] Loading: ${status}`)
+    }
   }
 )
+
+// ========== API 定义 ==========
 const apis = {
-  getShit () {
-    return request<void, {
-      code: number
-      msg: string
-      data: [{ shit: number }]
-    }>({
-      url: '/get-shit'
+  // 基本 GET 请求
+  getUsers(params?: { name?: string }) {
+    return userRequest<void, Response<{ users: User[], query: any }>>({
+      url: '/users',
+      params
+    })
+  },
+
+  // POST 请求
+  createUser(userInfo: { name: string; age: number }) {
+    return userRequest<{ name: string; age: number }, Response<User>>({
+      url: '/post-shit',
+      method: 'POST',
+      data: userInfo
+    })
+  },
+
+  // PUT 请求
+  updateUser(id: number, userInfo: { name?: string; age?: number }) {
+    return userRequest<{ id: number; name?: string; age?: number }, Response<User>>({
+      url: '/put-shit',
+      method: 'PUT',
+      data: { id, ...userInfo }
+    })
+  },
+
+  // DELETE 请求
+  deleteUser(id: number) {
+    return userRequest<void, Response<{ id: number }>>({
+      url: '/delete-shit',
+      method: 'DELETE',
+      params: { id }
+    })
+  },
+
+  // 缓存测试
+  getCachedData() {
+    return userRequest<void, Response<{ timestamp: number; message: string }>>({
+      url: '/cached-data'
+    }, {
+      cache: {
+        type: 'memory',
+        key: 'cached-data'
+      }
+    })
+  },
+
+  // 重试测试（HTTP 错误）
+  getRetryTest() {
+    return userRequest<void, Response<{ message: string; attempts: number }>>({
+      url: '/retry-test'
+    }, {
+      retryWhen: {
+        requestError: {
+          condition: (err) => err.response?.status === 500,
+          maximumCount: 3,
+          beforeRetry: () => {
+            console.log('[Retry] Before retry...')
+            updateLog('[Retry] Before retry...')
+          }
+        }
+      }
+    })
+  },
+
+  // 重试测试（业务错误）
+  getBizRetryTest() {
+    return userRequest<void, Response<{ message: string; attempts: number }>>({
+      url: '/biz-retry-test'
     }, {
       retryWhen: {
         requestSuccess: {
+          condition: (res) => res.data.code !== 0,
+          maximumCount: 3,
           beforeRetry: () => {
-            console.log('before retry in request definition')
-            // return Promise.resolve()
-          },
-          retryOthers: 'module',
-          maximumCount: 4,
-          condition: (res) => {
-            console.log(res, '000000')
-            return res.data.code === 0
+            console.log('[Biz Retry] Before retry...')
+            updateLog('[Biz Retry] Before retry...')
           }
         }
-      },
-      loading: status => console.log('loading...', status)
+      }
     })
   },
-  getShit2 () {
-    return request({
-      url: '/get-shit-2',
+
+  // 快速请求（用于 race）
+  getFastRequest() {
+    return userRequest<void, Response<{ message: string; delay: number }>>({
+      url: '/fast-request'
     })
   },
-  postShit () {
-    return request({
-      url: '/post-shit',
-      method: 'POST',
-      data: [{a: 1}, {a: 2}]
+
+  // 慢速请求（用于 race）
+  getSlowRequest() {
+    return userRequest<void, Response<{ message: string; delay: number }>>({
+      url: '/slow-request'
     })
   },
-  getBizErr () {
-    return request({
+
+  // 并发请求（用于 all）
+  getRequest1() {
+    return userRequest<void, Response<{ id: number; message: string }>>({
+      url: '/request-1'
+    })
+  },
+
+  getRequest2() {
+    return userRequest<void, Response<{ id: number; message: string }>>({
+      url: '/request-2'
+    })
+  },
+
+  getRequest3() {
+    return userRequest<void, Response<{ id: number; message: string }>>({
+      url: '/request-3'
+    })
+  },
+
+  // HTTP 错误测试
+  getHttpError() {
+    return userRequest<void, Response<unknown>>({
+      url: '/http-error-shit'
+    })
+  },
+
+  // 业务错误测试
+  getBizError() {
+    return userRequest<void, Response<unknown>>({
       url: '/biz-error-shit'
     })
   }
 }
 
-function sendRequest () {
-  // apis.getShit2()
-  // apis.getShit()
-  // apis.getShit2()
-  apis.postShit()
+// ========== UI 辅助函数 ==========
+function updateLog(message: string) {
+  const logDiv = document.getElementById('log')
+  if (logDiv) {
+    const logEntry = document.createElement('div')
+    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+    logEntry.style.padding = '4px'
+    logEntry.style.borderBottom = '1px solid #eee'
+    logDiv.appendChild(logEntry)
+    logDiv.scrollTop = logDiv.scrollHeight
+  }
 }
 
-function sendRequest2 () {
-  apis.getShit2()
-    .loading(res => console.log('loading 1...', res))
-    .loading(res => console.log('loading 2...', res))
-    .loading(res => console.log('loading 3...', res))
+function clearLog() {
+  const logDiv = document.getElementById('log')
+  if (logDiv) {
+    logDiv.innerHTML = ''
+  }
 }
 
-function sendRequest3 () {
-  apis.getShit()
-    .success(() => {
-      console.log('get shit success')
-      throw new Error('shit')
+// ========== 基础功能测试 ==========
+function testBasicChain() {
+  clearLog()
+  updateLog('=== 测试基本链式调用 ===')
+  
+  apis.getUsers({ name: 'Test' })
+    .loading((status) => {
+      updateLog(`Loading callback: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`Success: ${JSON.stringify(data)}`)
+    })
+    .error((data) => {
+      updateLog(`Business Error: ${JSON.stringify(data)}`)
+    })
+    .requestError((err) => {
+      updateLog(`Request Error: ${err.message}`)
+    })
+    .anyway(() => {
+      updateLog(`Anyway callback called`)
     })
 }
 
-function sendRequest4 () {
-  apis.getBizErr()
+function testAbort() {
+  clearLog()
+  updateLog('=== 测试 Abort 功能 ===')
+  
+  const chain = apis.getUsers()
+    .loading((status) => {
+      updateLog(`Loading: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`Success: ${JSON.stringify(data)}`)
+    })
+  
+  updateLog('Request started, will abort in 100ms...')
+  setTimeout(() => {
+    chain.abort()
+    updateLog('Request aborted!')
+  }, 100)
 }
 
+function testCache() {
+  clearLog()
+  updateLog('=== 测试缓存功能 ===')
+  
+  const testCache = () => {
+    const startTime = Date.now()
+    apis.getCachedData()
+      .success((data) => {
+        const elapsed = Date.now() - startTime
+        updateLog(`Cached data received in ${elapsed}ms: ${JSON.stringify(data)}`)
+      })
+  }
+  
+  updateLog('First request (should be slow)...')
+  testCache()
+  
+  setTimeout(() => {
+    updateLog('Second request (should be fast from cache)...')
+    testCache()
+  }, 1000)
+}
+
+function testRetry() {
+  clearLog()
+  updateLog('=== 测试重试功能（HTTP 错误）===')
+  
+  apis.getRetryTest()
+    .loading((status) => {
+      updateLog(`Loading: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`Success after retries: ${JSON.stringify(data)}`)
+    })
+    .requestError((err) => {
+      updateLog(`Request Error: ${err.message}`)
+    })
+}
+
+function testBizRetry() {
+  clearLog()
+  updateLog('=== 测试重试功能（业务错误）===')
+  
+  apis.getBizRetryTest()
+    .loading((status) => {
+      updateLog(`Loading: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`Success after retries: ${JSON.stringify(data)}`)
+    })
+    .error((data) => {
+      updateLog(`Business Error: ${JSON.stringify(data)}`)
+    })
+}
+
+function testRace() {
+  clearLog()
+  updateLog('=== 测试 Race 功能 ===')
+  
+  race([
+    apis.getSlowRequest(),
+    apis.getFastRequest()
+  ])
+    .loading((status) => {
+      updateLog(`Race Loading: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`Race Success (first to complete): ${JSON.stringify(data)}`)
+    })
+}
+
+function testAll() {
+  clearLog()
+  updateLog('=== 测试 All 功能 ===')
+  
+  all([
+    apis.getRequest1(),
+    apis.getRequest2(),
+    apis.getRequest3()
+  ])
+    .loading((status) => {
+      updateLog(`All Loading: ${status}`)
+    })
+    .success((data) => {
+      updateLog(`All Success (all completed): ${JSON.stringify(data)}`)
+    })
+}
+
+function testErrorHandling() {
+  clearLog()
+  updateLog('=== 测试错误处理 ===')
+  
+  updateLog('1. Testing HTTP Error...')
+  apis.getHttpError()
+    .requestError((err) => {
+      updateLog(`HTTP Error caught: ${err.message}`)
+    })
+    .anyway(() => {
+      updateLog('HTTP Error anyway callback')
+    })
+  
+  setTimeout(() => {
+    updateLog('2. Testing Business Error...')
+    apis.getBizError()
+      .error((data) => {
+        updateLog(`Business Error caught: ${JSON.stringify(data)}`)
+      })
+      .anyway(() => {
+        updateLog('Business Error anyway callback')
+      })
+  }, 1000)
+}
+
+// ========== React Hook 测试组件 ==========
+function createReactDemo() {
+  const container = document.getElementById('react-demo')
+  if (!container) return
+
+  // 简单的 React-like 渲染（不使用真正的 React，只是演示概念）
+  container.innerHTML = `
+    <div style="padding: 20px; border: 1px solid #ddd; margin: 10px 0;">
+      <h3>React Hook Demo (Conceptual)</h3>
+      <p>In a real React app, you would use:</p>
+      <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;">
+const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'React' })
+      </pre>
+      <button onclick="testReactHook()" style="padding: 8px 16px; margin: 5px;">Test React Hook</button>
+      <div id="react-result" style="margin-top: 10px;"></div>
+    </div>
+  `
+}
+
+function testReactHook() {
+  const resultDiv = document.getElementById('react-result')
+  if (!resultDiv) return
+
+  resultDiv.innerHTML = '<p>Loading...</p>'
+  
+  // 模拟 React hook 的使用
+  apis.getUsers({ name: 'React User' })
+    .loading((status) => {
+      if (status) {
+        resultDiv.innerHTML = '<p>Loading...</p>'
+      }
+    })
+    .success((data) => {
+      resultDiv.innerHTML = `<p style="color: green;">Success: ${JSON.stringify(data)}</p>`
+    })
+    .error((data) => {
+      resultDiv.innerHTML = `<p style="color: red;">Error: ${JSON.stringify(data)}</p>`
+    })
+}
+
+// ========== Vue Hook 测试组件 ==========
+function createVueDemo() {
+  const container = document.getElementById('vue-demo')
+  if (!container) return
+
+  container.innerHTML = `
+    <div style="padding: 20px; border: 1px solid #ddd; margin: 10px 0;">
+      <h3>Vue Hook Demo (Conceptual)</h3>
+      <p>In a real Vue app, you would use:</p>
+      <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;">
+const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'Vue' })
+      </pre>
+      <button onclick="testVueHook()" style="padding: 8px 16px; margin: 5px;">Test Vue Hook</button>
+      <div id="vue-result" style="margin-top: 10px;"></div>
+    </div>
+  `
+}
+
+function testVueHook() {
+  const resultDiv = document.getElementById('vue-result')
+  if (!resultDiv) return
+
+  resultDiv.innerHTML = '<p>Loading...</p>'
+  
+  // 模拟 Vue hook 的使用
+  apis.getUsers({ name: 'Vue User' })
+    .loading((status) => {
+      if (status) {
+        resultDiv.innerHTML = '<p>Loading...</p>'
+      }
+    })
+    .success((data) => {
+      resultDiv.innerHTML = `<p style="color: green;">Success: ${JSON.stringify(data)}</p>`
+    })
+    .error((data) => {
+      resultDiv.innerHTML = `<p style="color: red;">Error: ${JSON.stringify(data)}</p>`
+    })
+}
+
+// ========== 页面初始化 ==========
 window.addEventListener('load', () => {
-  const button = document.createElement('button')
-  button.innerText = '发送请求'
-  button.addEventListener('click', sendRequest)
-  document.body.appendChild(button)
+  const app = document.getElementById('app')
+  if (!app) return
 
-  const button2 = document.createElement('button')
-  button2.innerText = '发送请求2'
-  button2.addEventListener('click', sendRequest2)
-  document.body.appendChild(button2)
+  app.innerHTML = `
+    <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+      <h1>Maxios Demo</h1>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <h2>基础功能测试</h2>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button onclick="testBasicChain()" style="padding: 10px;">测试链式调用</button>
+            <button onclick="testAbort()" style="padding: 10px;">测试 Abort</button>
+            <button onclick="testCache()" style="padding: 10px;">测试缓存</button>
+            <button onclick="testRetry()" style="padding: 10px;">测试重试（HTTP错误）</button>
+            <button onclick="testBizRetry()" style="padding: 10px;">测试重试（业务错误）</button>
+            <button onclick="testRace()" style="padding: 10px;">测试 Race</button>
+            <button onclick="testAll()" style="padding: 10px;">测试 All</button>
+            <button onclick="testErrorHandling()" style="padding: 10px;">测试错误处理</button>
+          </div>
+        </div>
+        
+        <div>
+          <h2>日志</h2>
+          <div id="log" style="height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9; font-family: monospace; font-size: 12px;">
+          </div>
+          <button onclick="clearLog()" style="margin-top: 10px; padding: 5px 10px;">清空日志</button>
+        </div>
+      </div>
+      
+      <div id="react-demo"></div>
+      <div id="vue-demo"></div>
+    </div>
+  `
 
-  const button3 = document.createElement('button')
-  button3.innerText = '发送请求3'
-  button3.addEventListener('click', sendRequest3)
-  document.body.appendChild(button3)
+  // 将函数暴露到全局，以便 HTML 中的 onclick 可以调用
+  ;(window as any).testBasicChain = testBasicChain
+  ;(window as any).testAbort = testAbort
+  ;(window as any).testCache = testCache
+  ;(window as any).testRetry = testRetry
+  ;(window as any).testBizRetry = testBizRetry
+  ;(window as any).testRace = testRace
+  ;(window as any).testAll = testAll
+  ;(window as any).testErrorHandling = testErrorHandling
+  ;(window as any).testReactHook = testReactHook
+  ;(window as any).testVueHook = testVueHook
+  ;(window as any).clearLog = clearLog
 
-  const button4 = document.createElement('button')
-  button4.innerText = '发送请求4'
-  button4.addEventListener('click', sendRequest4)
-  document.body.appendChild(button4) 
+  createReactDemo()
+  createVueDemo()
 })
-
