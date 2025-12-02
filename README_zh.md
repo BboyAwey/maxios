@@ -1,7 +1,7 @@
 
 # Maxios
 
-Maiox是一个基于[Axios](https://axios-http.com)封装的，用于请求数据的库。它所做的主要工作是将Axios的配置进行了分层，并且会按照最常用的逻辑（merge/join/replace...）来对这些配置进行合并使用。
+Maxios是一个基于[Axios](https://axios-http.com)封装的，用于请求数据的库。它所做的主要工作是将Axios的配置进行了分层，并且会按照最常用的逻辑（merge/join/replace...）来对这些配置进行合并使用。
 
 ## 动机
 
@@ -13,7 +13,7 @@ Maiox是一个基于[Axios](https://axios-http.com)封装的，用于请求数�
 
 ```sh
 # npm
-npm install @awey/maxio
+npm install @awey/maxios
 
 # yarn
 yarn add @awey/maxios
@@ -81,7 +81,7 @@ const request = modulize({
 
 // 推荐的做法是将整个Model的接口作为一个对象暴露
 export default Object.freeze({
-  getUsers (condition: Patial<UserInfo>) {
+  getUsers (condition: Partial<UserInfo>) {
     return request<void, ResponseData<User[]>>({
       params: condition
     })
@@ -103,7 +103,9 @@ export const createUser = (userInfo: UserInfo) => {
 }
 ```
 
-最后，在你的业务代码中，引入你定义好的Model来编写业务代码（Maxios支持在任何框架中使用，下面以React为例）：
+最后，在你的业务代码中，引入你定义好的Model来编写业务代码。Maxios支持在任何框架中使用，下面提供了链式调用和React Hook两种使用方式的示例：
+
+**使用链式调用（适用于任何框架）：**
 
 ```tsx
 /** 业务代码 */
@@ -111,13 +113,71 @@ import { useState } from 'react'
 import userModel, { User } from 'model/user'
 
 const [usersLoading, setUsersLoading] = useState(false)
-const [users, serUsers] = useState<User[]>([])
+const [users, setUsers] = useState<User[]>([])
 
 // 推荐将Model作为对象返回是因为这样你的业务代码可读性更强
 // 同时你的方法也因为有Model前缀，可以更简洁地进行命名
 userModel.getUsers({ name: 'Tony'})
   .loading(setUsersLoading)
   .success(setUsers)
+```
+
+**使用 React Hook（推荐在 React 应用中使用）：**
+
+```tsx
+/** 业务代码 */
+import { useMaxios } from '@awey/maxios/react'
+import userModel from 'model/user'
+
+function UserList() {
+  // useMaxios 返回 [request, result, loading, error]
+  const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+
+  // 手动触发请求
+  const handleRefresh = () => {
+    request({ name: 'John' }) // 使用新参数，或者调用 request() 使用初始参数
+  }
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>错误: {JSON.stringify(error)}</div>
+  
+  return (
+    <div>
+      <button onClick={handleRefresh}>刷新</button>
+      {users?.map(user => <div key={user.id}>{user.name}</div>)}
+    </div>
+  )
+}
+```
+
+**使用 Vue Hook（推荐在 Vue 3 应用中使用）：**
+
+```vue
+<!-- 业务代码 -->
+<script setup lang="ts">
+import { useMaxios } from '@awey/maxios/vue'
+import userModel from 'model/user'
+
+// useMaxios 返回 [request, result, loading, error]
+// 注意：result、loading 和 error 是 Vue 的 ref
+const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+
+// 手动触发请求
+const handleRefresh = () => {
+  request({ name: 'John' }) // 使用新参数，或者调用 request() 使用初始参数
+}
+</script>
+
+<template>
+  <div>
+    <button @click="handleRefresh">刷新</button>
+    <div v-if="loading">加载中...</div>
+    <div v-else-if="error">错误: {{ JSON.stringify(error) }}</div>
+    <div v-else>
+      <div v-for="user in users" :key="user.id">{{ user.name }}</div>
+    </div>
+  </div>
+</template>
 ```
 
 ## 链式调用
@@ -142,6 +202,9 @@ Maxios提供了下列API：
 * `request(axiosConfig, maxiosConfig)`：`modulize()`返回的方法，该方法用于发起请求；它所接受的参数和`globalConfig()`、`modulize()`一样，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置；它会返回一个上文已经介绍过的链式调用对象
 * `race(requests)`：该方法用于将多个请求以竞态的方式进行请求，以最先返回的请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
 * `all(requests)`：该方法用于同时发起多个请求，并以所有请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
+* `useMaxios(requestFn, initialParams?)`：提供 React 和 Vue 两个版本。将 Maxios 的链式调用转换为类似 SWR 的数组返回格式 `[request, result, loading, error]`。所有请求都需要手动触发，通过调用返回的 `request` 函数来发起请求。该 Hook 接受可选的第二个参数 `initialParams` 作为初始请求参数。调用 `request(newParams?)` 时，如果提供了新参数则使用新参数，否则使用初始参数。
+  - **React**：从 `@awey/maxios/react` 导入。需要 React >= 16.8.0 作为 peer dependency。
+  - **Vue**：从 `@awey/maxios/vue` 导入。需要 Vue >= 3.0.0 作为 peer dependency。注意 `result`、`loading` 和 `error` 是 Vue 的 ref。
 
 需要注意的是，如果希望获得完整的类型提示体验，在调用`request`方法时，需要为他的泛型指定具体类型。它接受三个泛型：
 
@@ -234,7 +297,7 @@ Maxios提供了请求结果缓存的功能。如果一些请求返回的数据�
 
 
 * `cache`：请求结果的缓存逻辑
-  * `cache.type`：指定使用的缓存类型，可以是`memory`，`session`（`window.sessionStoragy`）或者`local`（`window.localStoraty`）
+  * `cache.type`：指定使用的缓存类型，可以是`memory`，`session`（`window.sessionStorage`）或者`local`（`window.localStorage`）
   * `cache.key`：缓存的key，用于识别和获取缓存结果
 
 ### 自定义的请求方式
@@ -250,15 +313,19 @@ type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosReque
 如果你是从V1升级到V2版本，可以按照下面的清单来检查你需要修改的地方：
 
 1. `global()`更名为`globalConfig()`，且参数由一个变为两个，`axiosConfig`从`maxiosConfig`中独立出来，成为第一个参数
-2. `mudulize()`和`request()`的参数由一个变为两个，`axiosConfig`从`maxiosConfig`中独立出来，成为第一个参数
+2. `modulize()`和`request()`的参数由一个变为两个，`axiosConfig`从`maxiosConfig`中独立出来，成为第一个参数
 3. 请求发生错误时的回调函数配置`maxiosConfig.error`更名为`maxiosConfig.requestError`，且打断后续层级执行的返回值由原来的`true`变更为`false`
 4. 响应是否符合预期的判断函数`indicator`更名为`expect`
 5. 响应不符合预期时的回调函数配置`maxiosConfig.bizError`更名为`maxiosConfig.error`，且打断后续层级执行的返回值由原来的`true`变更为`false`
 6. `loading`、`success`和`anyway`的回调函数执行顺序变更为从低层级到高层级，且增加了返回`false`来打断后续层级执行的能力
 
-## 周边
+## 框架集成
 
-Maxios还提供了基于React Hooks和Vue Composition两种风格的转换器，让你在实际业务中使用Maxios更为趁手。
+Maxios 为 React 和 Vue 应用提供了内置的 Hook：
 
-* [maxios-react](https://github.com/BboyAwey/maxios-react)
-* [maxios-vue](https://github.com/BboyAwey/maxios-vue)
+* **React**：从 `@awey/maxios/react` 导入 `useMaxios`。需要 React >= 16.8.0。
+* **Vue**：从 `@awey/maxios/vue` 导入 `useMaxios`。需要 Vue >= 3.0.0。
+
+两个 Hook 遵循相同的 API 设计，都返回 `[request, result, loading, error]`。请参考上文的示例了解详细用法。
+
+**注意：** 如果你不使用 React 或 Vue，可以直接使用 Maxios，无需导入 Hook，避免在打包中包含不必要的框架依赖。
