@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AxiosError } from 'axios'
 import { IProcessorsChain } from './interfaces'
 
@@ -54,26 +54,30 @@ type UseMaxiosReturn<
 // useMaxios 函数重载：无参数的请求方法
 export function useMaxios<
   TRequestFn extends () => IProcessorsChain<any, any, any>
->(requestFn: TRequestFn): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 函数重载：有参数的请求方法，不带初始参数
 export function useMaxios<
   TRequestFn extends (params: any) => IProcessorsChain<any, any, any>
->(requestFn: TRequestFn): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 函数重载：有参数的请求方法，带初始参数
 export function useMaxios<
   TRequestFn extends (params: any) => IProcessorsChain<any, any, any>,
   TParams extends ExtractRequestParams<TRequestFn>
->(requestFn: TRequestFn, initialParams: TParams): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, initialParams: TParams, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 实现
 export function useMaxios<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>
 >(
   requestFn: TRequestFn,
-  initialParams?: ExtractRequestParams<TRequestFn>
+  initialParamsOrImmediate?: ExtractRequestParams<TRequestFn> | boolean,
+  immediate?: boolean
 ): UseMaxiosReturn<TRequestFn> {
+  // 处理参数：如果第二个参数是 boolean，说明是 immediate，否则是 initialParams
+  const initialParams = typeof initialParamsOrImmediate === 'boolean' ? undefined : initialParamsOrImmediate
+  const shouldImmediate = typeof initialParamsOrImmediate === 'boolean' ? initialParamsOrImmediate : (immediate ?? false)
   type Chain = ExtractRequestReturn<TRequestFn>
   type FinalResult = ExtractFinalResult<Chain>
   type OriginResult = ExtractOriginResult<Chain>
@@ -86,11 +90,17 @@ export function useMaxios<
   
   const chainRef = useRef<IProcessorsChain<any, any, any> | null>(null)
   const initialParamsRef = useRef<Params | undefined>(initialParams)
+  const requestFnRef = useRef<TRequestFn>(requestFn)
 
   // 更新初始参数引用
   useEffect(() => {
     initialParamsRef.current = initialParams
   }, [initialParams])
+
+  // 更新请求函数引用
+  useEffect(() => {
+    requestFnRef.current = requestFn
+  }, [requestFn])
 
   // 清理函数：组件卸载时 abort 请求
   useEffect(() => {
@@ -101,8 +111,23 @@ export function useMaxios<
     }
   }, [])
 
+  // 立即发起请求（如果 immediate 为 true）
+  useEffect(() => {
+    if (shouldImmediate) {
+      // 无参数请求函数：直接调用
+      if (requestFn.length === 0) {
+        request()
+      } 
+      // 有参数请求函数：必须有 initialParams 才调用
+      else if (initialParams !== undefined) {
+        request()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 只在组件挂载时执行一次
+
   // 创建请求函数
-  const request = (newParams?: Params): IProcessorsChain<any, any, any> => {
+  const request = useCallback((newParams?: Params): IProcessorsChain<any, any, any> => {
     // 重置状态
     setError(undefined)
     setResult(undefined)
@@ -110,15 +135,18 @@ export function useMaxios<
     // 确定使用的参数：优先使用新参数，否则使用初始参数
     const params = newParams !== undefined ? newParams : initialParamsRef.current
     
+    // 获取最新的请求函数引用
+    const currentRequestFn = requestFnRef.current
+    
     // 调用请求函数
     // 使用类型断言来处理不同的函数签名
     let chain: IProcessorsChain<any, any, any>
-    if (requestFn.length === 0) {
+    if (currentRequestFn.length === 0) {
       // 无参数的请求方法
-      chain = (requestFn as () => IProcessorsChain<any, any, any>)()
+      chain = (currentRequestFn as () => IProcessorsChain<any, any, any>)()
     } else if (params !== undefined) {
       // 有参数的请求方法，且提供了参数
-      chain = (requestFn as (params: Params) => IProcessorsChain<any, any, any>)(params)
+      chain = (currentRequestFn as (params: Params) => IProcessorsChain<any, any, any>)(params)
     } else {
       // 有参数的请求方法，但没有提供参数（这种情况在类型层面不应该发生，但为了运行时安全）
       // 如果既没有新参数也没有初始参数，抛出错误
@@ -152,7 +180,7 @@ export function useMaxios<
     })
 
     return chain
-  }
+  }, [])
 
   return [request as any, result, loading, error] as UseMaxiosReturn<TRequestFn>
 }
