@@ -1,4 +1,4 @@
-import { ref, onUnmounted, watch, type Ref } from 'vue'
+import { ref, onUnmounted, onMounted, watch, type Ref } from 'vue'
 import { AxiosError } from 'axios'
 import { IProcessorsChain } from './interfaces'
 
@@ -54,26 +54,30 @@ type UseMaxiosReturn<
 // useMaxios 函数重载：无参数的请求方法
 export function useMaxios<
   TRequestFn extends () => IProcessorsChain<any, any, any>
->(requestFn: TRequestFn): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 函数重载：有参数的请求方法，不带初始参数
 export function useMaxios<
   TRequestFn extends (params: any) => IProcessorsChain<any, any, any>
->(requestFn: TRequestFn): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 函数重载：有参数的请求方法，带初始参数
 export function useMaxios<
   TRequestFn extends (params: any) => IProcessorsChain<any, any, any>,
   TParams extends ExtractRequestParams<TRequestFn>
->(requestFn: TRequestFn, initialParams: TParams): UseMaxiosReturn<TRequestFn>
+>(requestFn: TRequestFn, initialParams: TParams, immediate?: boolean): UseMaxiosReturn<TRequestFn>
 
 // useMaxios 实现
 export function useMaxios<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>
 >(
   requestFn: TRequestFn,
-  initialParams?: ExtractRequestParams<TRequestFn>
+  initialParamsOrImmediate?: ExtractRequestParams<TRequestFn> | boolean,
+  immediate?: boolean
 ): UseMaxiosReturn<TRequestFn> {
+  // 处理参数：如果第二个参数是 boolean，说明是 immediate，否则是 initialParams
+  const initialParams = typeof initialParamsOrImmediate === 'boolean' ? undefined : initialParamsOrImmediate
+  const shouldImmediate = typeof initialParamsOrImmediate === 'boolean' ? initialParamsOrImmediate : (immediate ?? false)
   type Chain = ExtractRequestReturn<TRequestFn>
   type FinalResult = ExtractFinalResult<Chain>
   type OriginResult = ExtractOriginResult<Chain>
@@ -86,6 +90,7 @@ export function useMaxios<
   
   const chainRef = ref<IProcessorsChain<any, any, any> | null>(null)
   const initialParamsRef = ref<Params | undefined>(initialParams)
+  const requestFnRef = ref<TRequestFn>(requestFn)
 
   // 创建请求函数
   const request = (newParams?: Params): IProcessorsChain<any, any, any> => {
@@ -96,15 +101,18 @@ export function useMaxios<
     // 确定使用的参数：优先使用新参数，否则使用初始参数
     const params = newParams !== undefined ? newParams : initialParamsRef.value
     
+    // 获取最新的请求函数引用
+    const currentRequestFn = requestFnRef.value
+    
     // 调用请求函数
     // 使用类型断言来处理不同的函数签名
     let chain: IProcessorsChain<any, any, any>
-    if (requestFn.length === 0) {
+    if (currentRequestFn.length === 0) {
       // 无参数的请求方法
-      chain = (requestFn as () => IProcessorsChain<any, any, any>)()
+      chain = (currentRequestFn as () => IProcessorsChain<any, any, any>)()
     } else if (params !== undefined) {
       // 有参数的请求方法，且提供了参数
-      chain = (requestFn as (params: Params) => IProcessorsChain<any, any, any>)(params)
+      chain = (currentRequestFn as (params: Params) => IProcessorsChain<any, any, any>)(params)
     } else {
       // 有参数的请求方法，但没有提供参数（这种情况在类型层面不应该发生，但为了运行时安全）
       // 如果既没有新参数也没有初始参数，抛出错误
@@ -140,10 +148,29 @@ export function useMaxios<
     return chain
   }
 
+  // 更新请求函数引用（当 requestFn 变化时）
+  watch(() => requestFn, (newRequestFn: TRequestFn) => {
+    requestFnRef.value = newRequestFn
+  }, { immediate: true })
+
   // 更新初始参数引用（当 initialParams 变化时）
   watch(() => initialParams, (newParams: Params | undefined) => {
     initialParamsRef.value = newParams
   }, { immediate: true })
+
+  // 立即发起请求（如果 immediate 为 true）
+  onMounted(() => {
+    if (shouldImmediate) {
+      // 无参数请求函数：直接调用
+      if (requestFn.length === 0) {
+        request()
+      } 
+      // 有参数请求函数：必须有 initialParams 才调用
+      else if (initialParams !== undefined) {
+        request()
+      }
+    }
+  })
 
   // 清理函数：组件卸载时 abort 请求
   onUnmounted(() => {
