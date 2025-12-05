@@ -4,8 +4,8 @@ import { useMaxios } from '../src/react'
 import { apis } from './api-definitions'
 
 function ReactDemo() {
-  const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'React User' })
-  const [requestWithParams, usersWithParams, loadingWithParams, errorWithParams] = useMaxios(apis.getUsers)
+  const { request, data: users, loading, error } = useMaxios(apis.getUsers, { name: 'React User' })
+  const { request: requestWithParams, data: usersWithParams, loading: loadingWithParams, error: errorWithParams } = useMaxios(apis.getUsers)
   const [name, setName] = useState('')
 
   return (

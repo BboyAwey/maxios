@@ -130,8 +130,8 @@ import { useMaxios } from '@awey/maxios/react'
 import userModel from 'model/user'
 
 function UserList() {
-  // useMaxios 返回 [request, result, loading, error]
-  const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+  // useMaxios 返回 { data, loading, request, error }
+  const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
 
   // 手动触发请求
   const handleRefresh = () => {
@@ -158,9 +158,9 @@ function UserList() {
 import { useMaxios } from '@awey/maxios/vue'
 import userModel from 'model/user'
 
-// useMaxios 返回 [request, result, loading, error]
-// 注意：result、loading 和 error 是 Vue 的 ref
-const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+// useMaxios 返回 { data, loading, request, error }
+// 注意：data、loading 和 error 是 Vue 的 ref
+const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
 
 // 手动触发请求
 const handleRefresh = () => {
@@ -202,9 +202,9 @@ Maxios提供了下列API：
 * `request(axiosConfig, maxiosConfig)`：`modulize()`返回的方法，该方法用于发起请求；它所接受的参数和`globalConfig()`、`modulize()`一样，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置；它会返回一个上文已经介绍过的链式调用对象
 * `race(requests)`：该方法用于将多个请求以竞态的方式进行请求，以最先返回的请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
 * `all(requests)`：该方法用于同时发起多个请求，并以所有请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
-* `useMaxios(requestFn, initialParams?)`：提供 React 和 Vue 两个版本。将 Maxios 的链式调用转换为类似 SWR 的数组返回格式 `[request, result, loading, error]`。所有请求都需要手动触发，通过调用返回的 `request` 函数来发起请求。该 Hook 接受可选的第二个参数 `initialParams` 作为初始请求参数。调用 `request(newParams?)` 时，如果提供了新参数则使用新参数，否则使用初始参数。
+* `useMaxios(requestFn, initialParams?)`：提供 React 和 Vue 两个版本。将 Maxios 的链式调用转换为对象返回格式 `{ data, loading, request, error }`。所有请求都需要手动触发，通过调用返回的 `request` 函数来发起请求。该 Hook 接受可选的第二个参数 `initialParams` 作为初始请求参数。调用 `request(newParams?)` 时，如果提供了新参数则使用新参数，否则使用初始参数。
   - **React**：从 `@awey/maxios/react` 导入。需要 React >= 16.8.0 作为 peer dependency。
-  - **Vue**：从 `@awey/maxios/vue` 导入。需要 Vue >= 3.0.0 作为 peer dependency。注意 `result`、`loading` 和 `error` 是 Vue 的 ref。
+  - **Vue**：从 `@awey/maxios/vue` 导入。需要 Vue >= 3.0.0 作为 peer dependency。注意 `data`、`loading` 和 `error` 是 Vue 的 ref。
 
 需要注意的是，如果希望获得完整的类型提示体验，在调用`request`方法时，需要为他的泛型指定具体类型。它接受三个泛型：
 

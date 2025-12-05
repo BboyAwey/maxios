@@ -38,18 +38,18 @@ type HasParams<T> = T extends (...args: [any, ...any[]]) => any ? true : false
 type UseMaxiosReturn<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>,
   TChain extends IProcessorsChain<any, any, any> = ExtractRequestReturn<TRequestFn>
-> = [
-  // request 函数
-  HasParams<TRequestFn> extends true
-    ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
-    : () => IProcessorsChain<any, any, any>,
-  // result
-  Ref<ExtractFinalResult<TChain> | undefined>,
+> = {
+  // data
+  data: Ref<ExtractFinalResult<TChain> | undefined>
   // loading
-  Ref<boolean>,
+  loading: Ref<boolean>
+  // request 函数
+  request: HasParams<TRequestFn> extends true
+    ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
+    : () => IProcessorsChain<any, any, any>
   // error
-  Ref<ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined>
-]
+  error: Ref<ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined>
+}
 
 // useMaxios 函数重载：无参数的请求方法
 export function useMaxios<
@@ -84,7 +84,7 @@ export function useMaxios<
   type Payload = ExtractPayload<Chain>
   type Params = ExtractRequestParams<TRequestFn>
 
-  const result = ref<FinalResult | undefined>(undefined)
+  const data = ref<FinalResult | undefined>(undefined)
   const loading = ref<boolean>(false)
   const error = ref<OriginResult | AxiosError<OriginResult, Payload> | undefined>(undefined)
   
@@ -96,7 +96,7 @@ export function useMaxios<
   const request = (newParams?: Params): IProcessorsChain<any, any, any> => {
     // 重置状态
     error.value = undefined
-    result.value = undefined
+    data.value = undefined
 
     // 确定使用的参数：优先使用新参数，否则使用初始参数
     const params = newParams !== undefined ? newParams : initialParamsRef.value
@@ -128,21 +128,21 @@ export function useMaxios<
     })
 
     // 处理成功响应
-    chain.success((data: FinalResult) => {
-      result.value = data
+    chain.success((responseData: FinalResult) => {
+      data.value = responseData
       error.value = undefined
     })
 
     // 处理请求错误
     chain.requestError((err: AxiosError<OriginResult, Payload>) => {
       error.value = err
-      result.value = undefined
+      data.value = undefined
     })
 
     // 处理业务错误
-    chain.error((data: OriginResult) => {
-      error.value = data
-      result.value = undefined
+    chain.error((errorData: OriginResult) => {
+      error.value = errorData
+      data.value = undefined
     })
 
     return chain
@@ -158,6 +158,13 @@ export function useMaxios<
     initialParamsRef.value = newParams
   }, { immediate: true })
 
+  // 清理函数：组件卸载时 abort 请求
+  onUnmounted(() => {
+    if (chainRef.value) {
+      chainRef.value.abort()
+    }
+  })
+
   // 立即发起请求（如果 immediate 为 true）
   onMounted(() => {
     if (shouldImmediate) {
@@ -172,13 +179,11 @@ export function useMaxios<
     }
   })
 
-  // 清理函数：组件卸载时 abort 请求
-  onUnmounted(() => {
-    if (chainRef.value) {
-      chainRef.value.abort()
-    }
-  })
-
-  return [request as any, result, loading, error] as UseMaxiosReturn<TRequestFn>
+  return {
+    data,
+    loading,
+    request: request as any,
+    error
+  } as UseMaxiosReturn<TRequestFn>
 }
 
