@@ -375,7 +375,7 @@ function createReactDemo() {
       <h3>React Hook Demo (Conceptual)</h3>
       <p>In a real React app, you would use:</p>
       <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;">
-const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'React' })
+const { request, data: users, loading, error } = useMaxios(apis.getUsers, { name: 'React' })
       </pre>
       <button onclick="testReactHook()" style="padding: 8px 16px; margin: 5px;">Test React Hook</button>
       <div id="react-result" style="margin-top: 10px;"></div>
@@ -414,7 +414,7 @@ function createVueDemo() {
       <h3>Vue Hook Demo (Conceptual)</h3>
       <p>In a real Vue app, you would use:</p>
       <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;">
-const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'Vue' })
+const { request, data: users, loading, error } = useMaxios(apis.getUsers, { name: 'Vue' })
       </pre>
       <button onclick="testVueHook()" style="padding: 8px 16px; margin: 5px;">Test Vue Hook</button>
       <div id="vue-result" style="margin-top: 10px;"></div>

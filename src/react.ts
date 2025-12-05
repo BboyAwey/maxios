@@ -38,18 +38,18 @@ type HasParams<T> = T extends (...args: [any, ...any[]]) => any ? true : false
 type UseMaxiosReturn<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>,
   TChain extends IProcessorsChain<any, any, any> = ExtractRequestReturn<TRequestFn>
-> = [
-  // request 函数
-  HasParams<TRequestFn> extends true
-    ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
-    : () => IProcessorsChain<any, any, any>,
-  // result
-  ExtractFinalResult<TChain> | undefined,
+> = {
+  // data
+  data: ExtractFinalResult<TChain> | undefined
   // loading
-  boolean,
+  loading: boolean
+  // request 函数
+  request: HasParams<TRequestFn> extends true
+    ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
+    : () => IProcessorsChain<any, any, any>
   // error
-  ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined
-]
+  error: ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined
+}
 
 // useMaxios 函数重载：无参数的请求方法
 export function useMaxios<
@@ -84,7 +84,7 @@ export function useMaxios<
   type Payload = ExtractPayload<Chain>
   type Params = ExtractRequestParams<TRequestFn>
 
-  const [result, setResult] = useState<FinalResult | undefined>(undefined)
+  const [data, setData] = useState<FinalResult | undefined>(undefined)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<OriginResult | AxiosError<OriginResult, Payload> | undefined>(undefined)
   
@@ -111,26 +111,11 @@ export function useMaxios<
     }
   }, [])
 
-  // 立即发起请求（如果 immediate 为 true）
-  useEffect(() => {
-    if (shouldImmediate) {
-      // 无参数请求函数：直接调用
-      if (requestFn.length === 0) {
-        request()
-      } 
-      // 有参数请求函数：必须有 initialParams 才调用
-      else if (initialParams !== undefined) {
-        request()
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // 只在组件挂载时执行一次
-
   // 创建请求函数
   const request = useCallback((newParams?: Params): IProcessorsChain<any, any, any> => {
     // 重置状态
     setError(undefined)
-    setResult(undefined)
+    setData(undefined)
 
     // 确定使用的参数：优先使用新参数，否则使用初始参数
     const params = newParams !== undefined ? newParams : initialParamsRef.current
@@ -162,25 +147,45 @@ export function useMaxios<
     })
 
     // 处理成功响应
-    chain.success((data: FinalResult) => {
-      setResult(data)
+    chain.success((responseData: FinalResult) => {
+      setData(responseData)
       setError(undefined)
     })
 
     // 处理请求错误
     chain.requestError((err: AxiosError<OriginResult, Payload>) => {
       setError(err)
-      setResult(undefined)
+      setData(undefined)
     })
 
     // 处理业务错误
-    chain.error((data: OriginResult) => {
-      setError(data)
-      setResult(undefined)
+    chain.error((errorData: OriginResult) => {
+      setError(errorData)
+      setData(undefined)
     })
 
     return chain
   }, [])
 
-  return [request as any, result, loading, error] as UseMaxiosReturn<TRequestFn>
+  // 立即发起请求（如果 immediate 为 true）
+  useEffect(() => {
+    if (shouldImmediate) {
+      // 无参数请求函数：直接调用
+      if (requestFn.length === 0) {
+        request()
+      } 
+      // 有参数请求函数：必须有 initialParams 才调用
+      else if (initialParams !== undefined) {
+        request()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 只在组件挂载时执行一次
+
+  return {
+    data,
+    loading,
+    request: request as any,
+    error
+  } as UseMaxiosReturn<TRequestFn>
 }

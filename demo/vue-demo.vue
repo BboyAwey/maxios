@@ -28,7 +28,7 @@
         style="padding: 8px; margin-right: 10px;"
       />
       <button
-        @click="requestWithParams({ name })"
+        @click="requestWithParams({ name: name })"
         :disabled="loadingWithParams || !name"
         style="padding: 8px 16px; margin: 5px;"
       >
@@ -60,8 +60,8 @@ import { ref } from 'vue'
 import { useMaxios } from '../src/vue'
 import { apis } from './api-definitions'
 
-const [request, users, loading, error] = useMaxios(apis.getUsers, { name: 'Vue User' })
-const [requestWithParams, usersWithParams, loadingWithParams, errorWithParams] = useMaxios(apis.getUsers)
+const { request, data: users, loading, error } = useMaxios(apis.getUsers, { name: 'Vue User' })
+const { request: requestWithParams, data: usersWithParams, loading: loadingWithParams, error: errorWithParams } = useMaxios(apis.getUsers)
 const name = ref('')
 </script>
 

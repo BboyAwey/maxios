@@ -129,8 +129,8 @@ import { useMaxios } from '@awey/maxios/react'
 import userModel from 'model/user'
 
 function UserList() {
-  // useMaxios returns [request, result, loading, error]
-  const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+  // useMaxios returns { data, loading, request, error }
+  const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
 
   // Manually trigger the request
   const handleRefresh = () => {
@@ -157,9 +157,9 @@ function UserList() {
 import { useMaxios } from '@awey/maxios/vue'
 import userModel from 'model/user'
 
-// useMaxios returns [request, result, loading, error]
-// Note: result, loading, and error are Vue refs
-const [request, users, loading, error] = useMaxios(userModel.getUsers, { name: 'Tony' })
+// useMaxios returns { data, loading, request, error }
+// Note: data, loading, and error are Vue refs
+const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
 
 // Manually trigger the request
 const handleRefresh = () => {
@@ -201,9 +201,9 @@ Maxios provides the following APIs:
 * `request(axiosConfig, maxiosConfig)`: The method returned by `modulize()`, used to initiate requests; it accepts the same parameters as `globalConfig()` and `modulize()`, the first parameter is the configuration passed to Axios, and the second parameter is the configuration passed to Maxios; it returns a chained call object introduced earlier
 * `race(requests)`: This method is used to make multiple requests in a race condition, using the result of the first returned request as its result; it accepts an array composed of chained objects returned by the `request()` method mentioned earlier; it also returns a chained call object
 * `all(requests)`: This method is used to initiate multiple requests simultaneously and use the results of all requests as its result; it accepts an array composed of chained objects returned by the `request()` method mentioned earlier; it also returns a chained call object
-* `useMaxios(requestFn, initialParams?)`: Available in both React and Vue versions. Converts Maxios chained calls into a SWR-like array format `[request, result, loading, error]`. All requests must be manually triggered by calling the returned `request` function. The hook accepts an optional second parameter `initialParams` for initial request parameters. When calling `request(newParams?)`, if new parameters are provided, they will be used; otherwise, the initial parameters will be used.
+* `useMaxios(requestFn, initialParams?)`: Available in both React and Vue versions. Converts Maxios chained calls into an object format `{ data, loading, request, error }`. All requests must be manually triggered by calling the returned `request` function. The hook accepts an optional second parameter `initialParams` for initial request parameters. When calling `request(newParams?)`, if new parameters are provided, they will be used; otherwise, the initial parameters will be used.
   - **React**: Import from `@awey/maxios/react`. Requires React >= 16.8.0 as a peer dependency.
-  - **Vue**: Import from `@awey/maxios/vue`. Requires Vue >= 3.0.0 as a peer dependency. Note that `result`, `loading`, and `error` are Vue refs.
+  - **Vue**: Import from `@awey/maxios/vue`. Requires Vue >= 3.0.0 as a peer dependency. Note that `data`, `loading`, and `error` are Vue refs.
 
 It should be noted that to get a complete type hint experience, you need to specify specific types for its generics when calling the `request` method. It accepts three generics:
 
