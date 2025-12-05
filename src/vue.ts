@@ -94,9 +94,8 @@ export function useMaxios<
 
   // 创建请求函数
   const request = (newParams?: Params): IProcessorsChain<any, any, any> => {
-    // 重置状态
+    // 重置错误状态
     error.value = undefined
-    data.value = undefined
 
     // 确定使用的参数：优先使用新参数，否则使用初始参数
     const params = newParams !== undefined ? newParams : initialParamsRef.value
