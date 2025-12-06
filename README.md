@@ -102,7 +102,7 @@ export const createUser = (userInfo: UserInfo) => {
 }
 ```
 
-Finally, in your business code, import the model you defined to write business logic. Maxios supports use in any framework. Below are examples for both traditional chained calls and React hooks:
+Finally, in your business code, import the model you defined to write business logic. Maxios can be used directly in any framework without requiring hooks. Below are examples for both traditional chained calls and optional hooks:
 
 **Using Chained Calls (works in any framework):**
 
@@ -121,63 +121,13 @@ userModel.getUsers({ name: 'Tony'})
   .success(setUsers)
 ```
 
-**Using React Hook (recommended for React applications):**
+**Using React Hook (optional):**
 
-```tsx
-/** Business code */
-import { useMaxios } from '@awey/maxios/react'
-import userModel from 'model/user'
+If you prefer a hook-based approach, Maxios provides optional hooks for React. See the [Hooks](#hooks) section for detailed usage and features.
 
-function UserList() {
-  // useMaxios returns { data, loading, request, error }
-  const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
+**Using Vue Hook (optional):**
 
-  // Manually trigger the request
-  const handleRefresh = () => {
-    request({ name: 'John' }) // Use new params, or call request() to use initial params
-  }
-
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {JSON.stringify(error)}</div>
-  
-  return (
-    <div>
-      <button onClick={handleRefresh}>Refresh</button>
-      {users?.map(user => <div key={user.id}>{user.name}</div>)}
-    </div>
-  )
-}
-```
-
-**Using Vue Hook (recommended for Vue 3 applications):**
-
-```vue
-<!-- Business code -->
-<script setup lang="ts">
-import { useMaxios } from '@awey/maxios/vue'
-import userModel from 'model/user'
-
-// useMaxios returns { data, loading, request, error }
-// Note: data, loading, and error are Vue refs
-const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
-
-// Manually trigger the request
-const handleRefresh = () => {
-  request({ name: 'John' }) // Use new params, or call request() to use initial params
-}
-</script>
-
-<template>
-  <div>
-    <button @click="handleRefresh">Refresh</button>
-    <div v-if="loading">Loading...</div>
-    <div v-else-if="error">Error: {{ JSON.stringify(error) }}</div>
-    <div v-else>
-      <div v-for="user in users" :key="user.id">{{ user.name }}</div>
-    </div>
-  </div>
-</template>
-```
+If you prefer a hook-based approach, Maxios provides optional hooks for Vue. See the [Hooks](#hooks) section for detailed usage and features.
 
 ## Chained Calls
 
@@ -201,9 +151,7 @@ Maxios provides the following APIs:
 * `request(axiosConfig, maxiosConfig)`: The method returned by `modulize()`, used to initiate requests; it accepts the same parameters as `globalConfig()` and `modulize()`, the first parameter is the configuration passed to Axios, and the second parameter is the configuration passed to Maxios; it returns a chained call object introduced earlier
 * `race(requests)`: This method is used to make multiple requests in a race condition, using the result of the first returned request as its result; it accepts an array composed of chained objects returned by the `request()` method mentioned earlier; it also returns a chained call object
 * `all(requests)`: This method is used to initiate multiple requests simultaneously and use the results of all requests as its result; it accepts an array composed of chained objects returned by the `request()` method mentioned earlier; it also returns a chained call object
-* `useMaxios(requestFn, initialParams?)`: Available in both React and Vue versions. Converts Maxios chained calls into an object format `{ data, loading, request, error }`. All requests must be manually triggered by calling the returned `request` function. The hook accepts an optional second parameter `initialParams` for initial request parameters. When calling `request(newParams?)`, if new parameters are provided, they will be used; otherwise, the initial parameters will be used.
-  - **React**: Import from `@awey/maxios/react`. Requires React >= 16.8.0 as a peer dependency.
-  - **Vue**: Import from `@awey/maxios/vue`. Requires Vue >= 3.0.0 as a peer dependency. Note that `data`, `loading`, and `error` are Vue refs.
+* `useMaxios(requestFn, options?)`: Available in both React and Vue versions. See the [Hooks](#hooks) section for detailed usage and features.
 
 It should be noted that to get a complete type hint experience, you need to specify specific types for its generics when calling the `request` method. It accepts three generics:
 
@@ -318,13 +266,222 @@ If you are upgrading from V1 to V2, you can check the following checklist for th
 5. The callback function configuration for unexpected response `maxiosConfig.bizError` is renamed to `maxiosConfig.error`, and the return value for interrupting subsequent level execution has changed from `true` to `false`
 6. The excution order of callback functions `loading`, `success` and `anyway` has been changed to 'down-to-up', and add add the ability of interruption subsuquent level execution by return `false`
 
-## Framework Integration
+## Hooks
 
-Maxios provides built-in hooks for React and Vue applications:
+Maxios can be used directly in any framework without requiring hooks. However, if you prefer a hook-based approach, Maxios provides optional hooks for React and Vue applications to simplify data fetching in component-based frameworks. The hooks automatically manage request state (`data`, `loading`, `error`) and provide flexible control over when requests are triggered.
 
-* **React**: Import `useMaxios` from `@awey/maxios/react`. Requires React >= 16.8.0.
-* **Vue**: Import `useMaxios` from `@awey/maxios/vue`. Requires Vue >= 3.0.0.
+**Note:** Hooks are completely optional. You can use Maxios with its chained call API in any framework, including React and Vue, without importing any hooks.
 
-Both hooks follow the same API design and return `[request, result, loading, error]`. See the examples above for usage details.
+### Installation
 
-**Note:** If you don't use React or Vue, you can use Maxios directly without importing the hooks, avoiding unnecessary framework dependencies in your bundle.
+* **React**: Import `useMaxios` from `@awey/maxios/react`. Requires React >= 16.8.0 as a peer dependency.
+* **Vue**: Import `useMaxios` from `@awey/maxios/vue`. Requires Vue >= 3.0.0 as a peer dependency.
+
+### Basic Usage
+
+**React:**
+
+```tsx
+import { useMaxios } from '@awey/maxios/react'
+import userModel from 'model/user'
+
+function UserList() {
+  const { request, data: users, loading, error } = useMaxios(
+    userModel.getUsers, 
+    { args: [{ name: 'Tony' }] }
+  )
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {JSON.stringify(error)}</div>
+  
+  return (
+    <div>
+      {users?.map(user => <div key={user.id}>{user.name}</div>)}
+    </div>
+  )
+}
+```
+
+**Vue:**
+
+```vue
+<script setup lang="ts">
+import { useMaxios } from '@awey/maxios/vue'
+import userModel from 'model/user'
+
+// Note: data, loading, and error are Vue refs
+const { request, data: users, loading, error } = useMaxios(
+  userModel.getUsers, 
+  { args: [{ name: 'Tony' }] }
+)
+</script>
+
+<template>
+  <div>
+    <div v-if="loading">Loading...</div>
+    <div v-else-if="error">Error: {{ JSON.stringify(error) }}</div>
+    <div v-else>
+      <div v-for="user in users" :key="user.id">{{ user.name }}</div>
+    </div>
+  </div>
+</template>
+```
+
+### Features
+
+#### 1. Automatic Request Triggering
+
+The `auto` option controls when requests are automatically triggered:
+
+```tsx
+// Auto-trigger on mount and when args change (default)
+const { data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: true 
+})
+
+// Disable auto-triggering
+const { request, data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: false 
+})
+
+// Conditional auto-triggering with function
+const { data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: () => userId > 0 
+})
+```
+
+#### 2. Object Format Auto Option
+
+For more fine-grained control, you can use an object format:
+
+```tsx
+const { data } = useMaxios(api.getUserById, {
+  args: [userId],
+  auto: {
+    enable: isEnabled,           // Enable/disable auto-triggering
+    condition: () => userId > 0, // Additional condition function
+    debounce: true               // Debounce args changes (300ms default)
+  }
+})
+```
+
+**Object format options:**
+- `enable?: boolean` - Enable or disable auto-triggering (defaults to `true` if not provided)
+- `condition?: () => boolean` - Additional condition function that must return `true` for the request to trigger
+- `debounce?: boolean | number` - Debounce args changes:
+  - `false` (default) - No debouncing
+  - `true` - 300ms debounce
+  - `number` - Custom debounce delay in milliseconds
+
+#### 3. Reactive Arguments
+
+Arguments (`args`) are reactive and will automatically trigger requests when they change:
+
+```tsx
+// React
+const [userId, setUserId] = useState(1)
+const { data } = useMaxios(api.getUserById, { 
+  args: [userId],  // Request triggers when userId changes
+  auto: true 
+})
+
+// Vue
+const userId = ref(1)
+const { data } = useMaxios(api.getUserById, { 
+  args: computed(() => [userId.value]),  // Request triggers when userId changes
+  auto: true 
+})
+```
+
+#### 4. Parameter Memory and Override
+
+The returned `request` function remembers the latest `args` and allows parameter override:
+
+```tsx
+const { request, data } = useMaxios(api.getUserById, { 
+  args: [userId], 
+  auto: false 
+})
+
+// Use remembered args
+request()
+
+// Override with new params
+request(999)
+```
+
+#### 5. Debouncing
+
+Debouncing helps reduce unnecessary requests when arguments change frequently:
+
+```tsx
+// 300ms debounce (default when debounce: true)
+const { data } = useMaxios(api.searchUsers, {
+  args: [searchQuery],
+  auto: {
+    debounce: true
+  }
+})
+
+// Custom debounce delay
+const { data } = useMaxios(api.searchUsers, {
+  args: [searchQuery],
+  auto: {
+    debounce: 500  // 500ms debounce
+  }
+})
+```
+
+**Note:** Debouncing only applies when `args` change, not when `condition` or `enable` change.
+
+### API
+
+```tsx
+useMaxios<TRequestFn>(
+  requestFn: TRequestFn,
+  options?: {
+    args?: ExtractRequestArgs<TRequestFn>,
+    auto?: boolean | (() => boolean) | {
+      enable?: boolean
+      condition?: () => boolean
+      debounce?: boolean | number
+    }
+  }
+): {
+  data: FinalResult | undefined
+  loading: boolean
+  error: OriginResult | AxiosError | undefined
+  request: (...args: RequestArgs) => IProcessorsChain
+}
+```
+
+**Return values:**
+- `data` - The extracted response data (from `extractor`). `undefined` in React, `Ref<undefined>` in Vue.
+- `loading` - Loading state. `boolean` in React, `Ref<boolean>` in Vue.
+- `error` - Error information (request error or business error). `undefined` in React, `Ref<undefined>` in Vue.
+- `request` - Function to manually trigger the request. Can be called with new arguments to override remembered args.
+
+**Note:** In Vue, `data`, `loading`, and `error` are reactive refs, so you need to access their `.value` property when needed (though Vue's template automatically unwraps refs).
+
+### Type Safety
+
+The hook provides full TypeScript support with automatic type inference:
+
+```tsx
+// TypeScript automatically infers types from requestFn
+const { data } = useMaxios(api.getUserById, { args: [1] })
+// data type: User | undefined
+
+// For functions with optional parameters
+const { data } = useMaxios(api.getUsers, { args: [{ name: 'Tony' }] })
+// data type: User[] | undefined
+
+// For functions with no parameters
+const { data } = useMaxios(api.getAllUsers)
+// data type: User[] | undefined
+```
+
+**Note:** Hooks are completely optional. You can use Maxios with its chained call API in any framework, including React and Vue, without importing any hooks. This helps avoid unnecessary framework dependencies in your bundle.

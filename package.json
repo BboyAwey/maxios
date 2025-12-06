@@ -1,7 +1,7 @@
 {
   "name": "@awey/maxios",
   "description": "Use axios to fetch data, but configure every api with 4 levels of configurations.",
-  "version": "2.1.3",
+  "version": "2.1.5",
   "author": {
     "name": "Awey",
     "email": "bboyawey@sina.cn"
@@ -66,7 +66,8 @@
   },
   "dependencies": {
     "@awey/dache": "^1.0.0",
-    "axios": "^1.7.9"
+    "axios": "^1.7.9",
+    "fast-deep-equal": "^3.1.3"
   },
   "license": "MIT",
   "publishConfig": {
