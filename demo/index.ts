@@ -450,7 +450,12 @@ window.addEventListener('load', () => {
 
   app.innerHTML = `
     <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-      <h1>Maxios Demo</h1>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">Maxios Demo</h1>
+        <a href="/demo/hooks-test.html" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+          🧪 Hooks 完整测试页面
+        </a>
+      </div>
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div>

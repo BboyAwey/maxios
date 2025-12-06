@@ -103,7 +103,7 @@ export const createUser = (userInfo: UserInfo) => {
 }
 ```
 
-最后，在你的业务代码中，引入你定义好的Model来编写业务代码。Maxios支持在任何框架中使用，下面提供了链式调用和React Hook两种使用方式的示例：
+最后，在你的业务代码中，引入你定义好的Model来编写业务代码。Maxios 可以在任何框架中直接使用，无需使用 Hooks。下面提供了链式调用和可选的 Hooks 两种使用方式的示例：
 
 **使用链式调用（适用于任何框架）：**
 
@@ -122,63 +122,13 @@ userModel.getUsers({ name: 'Tony'})
   .success(setUsers)
 ```
 
-**使用 React Hook（推荐在 React 应用中使用）：**
+**使用 React Hook（可选）：**
 
-```tsx
-/** 业务代码 */
-import { useMaxios } from '@awey/maxios/react'
-import userModel from 'model/user'
+如果你偏好使用 Hook 的方式，Maxios 提供了可选的 React Hook。详见 [Hooks](#hooks) 章节了解详细用法和特性。
 
-function UserList() {
-  // useMaxios 返回 { data, loading, request, error }
-  const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
+**使用 Vue Hook（可选）：**
 
-  // 手动触发请求
-  const handleRefresh = () => {
-    request({ name: 'John' }) // 使用新参数，或者调用 request() 使用初始参数
-  }
-
-  if (loading) return <div>加载中...</div>
-  if (error) return <div>错误: {JSON.stringify(error)}</div>
-  
-  return (
-    <div>
-      <button onClick={handleRefresh}>刷新</button>
-      {users?.map(user => <div key={user.id}>{user.name}</div>)}
-    </div>
-  )
-}
-```
-
-**使用 Vue Hook（推荐在 Vue 3 应用中使用）：**
-
-```vue
-<!-- 业务代码 -->
-<script setup lang="ts">
-import { useMaxios } from '@awey/maxios/vue'
-import userModel from 'model/user'
-
-// useMaxios 返回 { data, loading, request, error }
-// 注意：data、loading 和 error 是 Vue 的 ref
-const { request, data: users, loading, error } = useMaxios(userModel.getUsers, { name: 'Tony' })
-
-// 手动触发请求
-const handleRefresh = () => {
-  request({ name: 'John' }) // 使用新参数，或者调用 request() 使用初始参数
-}
-</script>
-
-<template>
-  <div>
-    <button @click="handleRefresh">刷新</button>
-    <div v-if="loading">加载中...</div>
-    <div v-else-if="error">错误: {{ JSON.stringify(error) }}</div>
-    <div v-else>
-      <div v-for="user in users" :key="user.id">{{ user.name }}</div>
-    </div>
-  </div>
-</template>
-```
+如果你偏好使用 Hook 的方式，Maxios 提供了可选的 Vue Hook。详见 [Hooks](#hooks) 章节了解详细用法和特性。
 
 ## 链式调用
 
@@ -202,9 +152,7 @@ Maxios提供了下列API：
 * `request(axiosConfig, maxiosConfig)`：`modulize()`返回的方法，该方法用于发起请求；它所接受的参数和`globalConfig()`、`modulize()`一样，第一个参数为传递给Axios的配置，第二个参数为传递给Maxios的配置；它会返回一个上文已经介绍过的链式调用对象
 * `race(requests)`：该方法用于将多个请求以竞态的方式进行请求，以最先返回的请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
 * `all(requests)`：该方法用于同时发起多个请求，并以所有请求的结果作为其结果；它接受一个由上文`request()`方法返回的链式对象组成的数组；同样它也返回了一个链式调用对象
-* `useMaxios(requestFn, initialParams?)`：提供 React 和 Vue 两个版本。将 Maxios 的链式调用转换为对象返回格式 `{ data, loading, request, error }`。所有请求都需要手动触发，通过调用返回的 `request` 函数来发起请求。该 Hook 接受可选的第二个参数 `initialParams` 作为初始请求参数。调用 `request(newParams?)` 时，如果提供了新参数则使用新参数，否则使用初始参数。
-  - **React**：从 `@awey/maxios/react` 导入。需要 React >= 16.8.0 作为 peer dependency。
-  - **Vue**：从 `@awey/maxios/vue` 导入。需要 Vue >= 3.0.0 作为 peer dependency。注意 `data`、`loading` 和 `error` 是 Vue 的 ref。
+* `useMaxios(requestFn, options?)`：提供 React 和 Vue 两个版本。详见 [Hooks](#hooks) 章节了解详细用法和特性。
 
 需要注意的是，如果希望获得完整的类型提示体验，在调用`request`方法时，需要为他的泛型指定具体类型。它接受三个泛型：
 
@@ -319,13 +267,222 @@ type TRequest = <T = unknown, R = AxiosResponse<T>, D = any> (config: AxiosReque
 5. 响应不符合预期时的回调函数配置`maxiosConfig.bizError`更名为`maxiosConfig.error`，且打断后续层级执行的返回值由原来的`true`变更为`false`
 6. `loading`、`success`和`anyway`的回调函数执行顺序变更为从低层级到高层级，且增加了返回`false`来打断后续层级执行的能力
 
-## 框架集成
+## Hooks
 
-Maxios 为 React 和 Vue 应用提供了内置的 Hook：
+Maxios 可以在任何框架中直接使用，无需使用 Hooks。但如果你偏好使用 Hook 的方式，Maxios 为 React 和 Vue 应用提供了可选的 Hook，用于简化基于组件的框架中的数据获取。Hook 会自动管理请求状态（`data`、`loading`、`error`），并提供灵活的控制机制来决定何时触发请求。
 
-* **React**：从 `@awey/maxios/react` 导入 `useMaxios`。需要 React >= 16.8.0。
-* **Vue**：从 `@awey/maxios/vue` 导入 `useMaxios`。需要 Vue >= 3.0.0。
+**注意：** Hooks 是完全可选的。你可以在任何框架（包括 React 和 Vue）中直接使用 Maxios 的链式调用 API，无需导入任何 Hook。
 
-两个 Hook 遵循相同的 API 设计，都返回 `[request, result, loading, error]`。请参考上文的示例了解详细用法。
+### 安装
 
-**注意：** 如果你不使用 React 或 Vue，可以直接使用 Maxios，无需导入 Hook，避免在打包中包含不必要的框架依赖。
+* **React**：从 `@awey/maxios/react` 导入 `useMaxios`。需要 React >= 16.8.0 作为 peer dependency。
+* **Vue**：从 `@awey/maxios/vue` 导入 `useMaxios`。需要 Vue >= 3.0.0 作为 peer dependency。
+
+### 基础用法
+
+**React：**
+
+```tsx
+import { useMaxios } from '@awey/maxios/react'
+import userModel from 'model/user'
+
+function UserList() {
+  const { request, data: users, loading, error } = useMaxios(
+    userModel.getUsers, 
+    { args: [{ name: 'Tony' }] }
+  )
+
+  if (loading) return <div>加载中...</div>
+  if (error) return <div>错误: {JSON.stringify(error)}</div>
+  
+  return (
+    <div>
+      {users?.map(user => <div key={user.id}>{user.name}</div>)}
+    </div>
+  )
+}
+```
+
+**Vue：**
+
+```vue
+<script setup lang="ts">
+import { useMaxios } from '@awey/maxios/vue'
+import userModel from 'model/user'
+
+// 注意：data、loading 和 error 是 Vue 的 ref
+const { request, data: users, loading, error } = useMaxios(
+  userModel.getUsers, 
+  { args: [{ name: 'Tony' }] }
+)
+</script>
+
+<template>
+  <div>
+    <div v-if="loading">加载中...</div>
+    <div v-else-if="error">错误: {{ JSON.stringify(error) }}</div>
+    <div v-else>
+      <div v-for="user in users" :key="user.id">{{ user.name }}</div>
+    </div>
+  </div>
+</template>
+```
+
+### 特性
+
+#### 1. 自动触发请求
+
+`auto` 选项控制何时自动触发请求：
+
+```tsx
+// 挂载时和 args 变化时自动触发（默认）
+const { data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: true 
+})
+
+// 禁用自动触发
+const { request, data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: false 
+})
+
+// 使用函数进行条件自动触发
+const { data } = useMaxios(api.getUsers, { 
+  args: [userId], 
+  auto: () => userId > 0 
+})
+```
+
+#### 2. 对象格式的 auto 选项
+
+为了更精细的控制，你可以使用对象格式：
+
+```tsx
+const { data } = useMaxios(api.getUserById, {
+  args: [userId],
+  auto: {
+    enable: isEnabled,           // 启用/禁用自动触发
+    condition: () => userId > 0, // 额外的条件函数
+    debounce: true               // 对 args 变化进行防抖（默认 300ms）
+  }
+})
+```
+
+**对象格式选项：**
+- `enable?: boolean` - 启用或禁用自动触发（如果未提供，默认为 `true`）
+- `condition?: () => boolean` - 额外的条件函数，必须返回 `true` 才会触发请求
+- `debounce?: boolean | number` - 对 args 变化进行防抖：
+  - `false`（默认）- 不防抖
+  - `true` - 300ms 防抖
+  - `number` - 自定义防抖延迟（毫秒）
+
+#### 3. 响应式参数
+
+参数（`args`）是响应式的，当它们变化时会自动触发请求：
+
+```tsx
+// React
+const [userId, setUserId] = useState(1)
+const { data } = useMaxios(api.getUserById, { 
+  args: [userId],  // userId 变化时会触发请求
+  auto: true 
+})
+
+// Vue
+const userId = ref(1)
+const { data } = useMaxios(api.getUserById, { 
+  args: computed(() => [userId.value]),  // userId 变化时会触发请求
+  auto: true 
+})
+```
+
+#### 4. 参数记忆和覆盖
+
+返回的 `request` 函数会记住最新的 `args`，并允许参数覆盖：
+
+```tsx
+const { request, data } = useMaxios(api.getUserById, { 
+  args: [userId], 
+  auto: false 
+})
+
+// 使用记住的参数
+request()
+
+// 使用新参数覆盖
+request(999)
+```
+
+#### 5. 防抖功能
+
+防抖功能有助于在参数频繁变化时减少不必要的请求：
+
+```tsx
+// 300ms 防抖（debounce: true 时的默认值）
+const { data } = useMaxios(api.searchUsers, {
+  args: [searchQuery],
+  auto: {
+    debounce: true
+  }
+})
+
+// 自定义防抖延迟
+const { data } = useMaxios(api.searchUsers, {
+  args: [searchQuery],
+  auto: {
+    debounce: 500  // 500ms 防抖
+  }
+})
+```
+
+**注意：** 防抖仅在 `args` 变化时生效，不会对 `condition` 或 `enable` 的变化进行防抖。
+
+### API
+
+```tsx
+useMaxios<TRequestFn>(
+  requestFn: TRequestFn,
+  options?: {
+    args?: ExtractRequestArgs<TRequestFn>,
+    auto?: boolean | (() => boolean) | {
+      enable?: boolean
+      condition?: () => boolean
+      debounce?: boolean | number
+    }
+  }
+): {
+  data: FinalResult | undefined
+  loading: boolean
+  error: OriginResult | AxiosError | undefined
+  request: (...args: RequestArgs) => IProcessorsChain
+}
+```
+
+**返回值：**
+- `data` - 提取的响应数据（来自 `extractor`）。React 中为 `undefined`，Vue 中为 `Ref<undefined>`。
+- `loading` - 加载状态。React 中为 `boolean`，Vue 中为 `Ref<boolean>`。
+- `error` - 错误信息（请求错误或业务错误）。React 中为 `undefined`，Vue 中为 `Ref<undefined>`。
+- `request` - 手动触发请求的函数。可以传入新参数来覆盖记住的参数。
+
+**注意：** 在 Vue 中，`data`、`loading` 和 `error` 是响应式 ref，需要时访问 `.value` 属性（不过 Vue 的模板会自动解包 ref）。
+
+### 类型安全
+
+Hook 提供了完整的 TypeScript 支持，具有自动类型推断：
+
+```tsx
+// TypeScript 会自动从 requestFn 推断类型
+const { data } = useMaxios(api.getUserById, { args: [1] })
+// data 类型: User | undefined
+
+// 对于可选参数的函数
+const { data } = useMaxios(api.getUsers, { args: [{ name: 'Tony' }] })
+// data 类型: User[] | undefined
+
+// 对于无参数的函数
+const { data } = useMaxios(api.getAllUsers)
+// data 类型: User[] | undefined
+```
+
+**注意：** Hooks 是完全可选的。你可以在任何框架（包括 React 和 Vue）中直接使用 Maxios 的链式调用 API，无需导入任何 Hook。这有助于避免在打包中包含不必要的框架依赖。

@@ -1,6 +1,8 @@
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
+import react from '@vitejs/plugin-react'
+import vue from '@vitejs/plugin-vue'
 import packageInfo from './package.json'
 
 export default defineConfig(({ mode }) => {
@@ -9,6 +11,10 @@ export default defineConfig(({ mode }) => {
   if (isDev) {
     // 开发模式：支持 demo
     return {
+      plugins: [
+        react(),
+        vue()
+      ],
       server: {
         proxy: {
           '/api': 'http://localhost:3000'

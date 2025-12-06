@@ -102,6 +102,46 @@ router.get('/users', async (ctx, next) => {
   await next()
 })
 
+// 支持动态路径参数的接口：/users/:id
+router.get('/users/:id', async (ctx, next) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 500)
+  })
+  const userId = parseInt(ctx.params.id)
+  ctx.body = {
+    code: 0,
+    msg: 'success',
+    data: {
+      id: userId,
+      name: ctx.request.query.name || `User ${userId}`,
+      age: 20 + userId
+    }
+  }
+  ctx.status = 200
+  await next()
+})
+
+// 支持搜索接口：/users/search
+router.get('/users/search', async (ctx, next) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 500)
+  })
+  ctx.body = {
+    code: 0,
+    msg: 'success',
+    data: {
+      users: [
+        { id: 1, name: 'Search Result 1', age: 20 },
+        { id: 2, name: 'Search Result 2', age: 25 }
+      ],
+      page: parseInt(ctx.request.query.page) || 1,
+      query: ctx.request.query.query || ''
+    }
+  }
+  ctx.status = 200
+  await next()
+})
+
 // 支持缓存的接口（返回时间戳用于验证缓存）
 router.get('/cached-data', async (ctx, next) => {
   ctx.body = {
