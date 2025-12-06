@@ -20,9 +20,18 @@ type ExtractPayload<T> = T extends IProcessorsChain<infer Payload, any, any>
 // 类型工具：从请求函数中提取参数类型
 type ExtractRequestParams<T> = T extends (params: infer Param) => any
   ? Param
+  : T extends (params?: infer Param) => any
+  ? Param
   : T extends () => any
   ? never
   : never
+
+// 类型工具：判断请求函数的参数是否可选
+type IsParamsOptional<T> = T extends (params?: any) => any
+  ? true
+  : T extends (params: any) => any
+  ? false
+  : false
 
 // 类型工具：从请求函数中提取返回类型（IProcessorsChain）
 type ExtractRequestReturn<T> = T extends (...args: any[]) => infer R
@@ -43,9 +52,11 @@ type UseMaxiosReturn<
   data: ExtractFinalResult<TChain> | undefined
   // loading
   loading: boolean
-  // request 函数
+  // request 函数 - 根据 requestFn 的参数是否可选来决定 request 的参数是否可选
   request: HasParams<TRequestFn> extends true
-    ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
+    ? IsParamsOptional<TRequestFn> extends true
+      ? (params?: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
+      : (params: ExtractRequestParams<TRequestFn>) => IProcessorsChain<any, any, any>
     : () => IProcessorsChain<any, any, any>
   // error
   error: ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined
