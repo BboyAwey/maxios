@@ -1,6 +1,6 @@
 {
   "name": "@awey/maxios",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "Layered Axios configuration manager with chained callbacks, retry, caching, and optional React/Vue hooks.",
   "keywords": [
     "axios",
