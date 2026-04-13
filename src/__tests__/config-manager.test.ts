@@ -131,4 +131,103 @@ describe('ConfigManager', () => {
       expect(config.baseURL).toBe('/api/user/detail')
     })
   })
+
+  describe('getNearestCacheConfig', () => {
+    it('should return api level cache first', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { cache: { type: 'session', key: 'mod' } },
+        apiConfig: { cache: { type: 'memory', key: 'api' } },
+      })
+      expect(cm.getNearestCacheConfig()).toEqual({ type: 'memory', key: 'api' })
+    })
+
+    it('should fall back to module level cache', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { cache: { type: 'session', key: 'mod' } },
+        apiConfig: {},
+      })
+      expect(cm.getNearestCacheConfig()).toEqual({ type: 'session', key: 'mod' })
+    })
+
+    it('should fall back to global level cache', () => {
+      ConfigManager.globalConfig = { cache: { type: 'local', key: 'global' } }
+      const cm = new ConfigManager({
+        moduleConfig: {},
+        apiConfig: {},
+      })
+      expect(cm.getNearestCacheConfig()).toEqual({ type: 'local', key: 'global' })
+    })
+
+    it('should return undefined when no cache configured', () => {
+      const cm = new ConfigManager({
+        moduleConfig: {},
+        apiConfig: {},
+      })
+      expect(cm.getNearestCacheConfig()).toBeUndefined()
+    })
+  })
+
+  describe('getNearestRetryConfig', () => {
+    const retryWhen = { requestError: { maximumCount: 3 } }
+
+    it('should return api level retry first', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { retryWhen },
+        apiConfig: { retryWhen },
+      })
+      expect(cm.getNearestRetryConfig()).toEqual({ level: 'api', retryWhen })
+    })
+
+    it('should fall back to module level retry', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { retryWhen },
+        apiConfig: {},
+      })
+      expect(cm.getNearestRetryConfig()).toEqual({ level: 'module', retryWhen })
+    })
+
+    it('should fall back to global level retry', () => {
+      ConfigManager.globalConfig = { retryWhen }
+      const cm = new ConfigManager({
+        moduleConfig: {},
+        apiConfig: {},
+      })
+      expect(cm.getNearestRetryConfig()).toEqual({ level: 'global', retryWhen })
+    })
+
+    it('should return null when no retry configured', () => {
+      const cm = new ConfigManager({
+        moduleConfig: {},
+        apiConfig: {},
+      })
+      expect(cm.getNearestRetryConfig()).toBeNull()
+    })
+  })
+
+  describe('getFinalAxiosConfig data merging edge cases', () => {
+    it('should handle module level non-plain-object data', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { axiosConfig: { data: 'form-string' } },
+        apiConfig: { axiosConfig: {} },
+      })
+      expect(cm.getFinalAxiosConfig().data).toBe('form-string')
+    })
+
+    it('should handle global level non-plain-object data when api and module have none', () => {
+      ConfigManager.globalConfig = { axiosConfig: { data: 'global-raw' } }
+      const cm = new ConfigManager({
+        moduleConfig: { axiosConfig: {} },
+        apiConfig: { axiosConfig: {} },
+      })
+      expect(cm.getFinalAxiosConfig().data).toBe('global-raw')
+    })
+
+    it('should return empty object when no data at any level', () => {
+      const cm = new ConfigManager({
+        moduleConfig: { axiosConfig: {} },
+        apiConfig: { axiosConfig: {} },
+      })
+      expect(cm.getFinalAxiosConfig().data).toEqual({})
+    })
+  })
 })

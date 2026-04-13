@@ -158,4 +158,66 @@ describe('ProcessorManager', () => {
       expect(order).toEqual(['global'])
     })
   })
+
+  describe('return false interruption for all processor types', () => {
+    it('should interrupt loading processors', () => {
+      const pm = new ProcessorManager()
+      const order: string[] = []
+
+      pm.loadProcessorFromMaxiosConfig({
+        loading: () => { order.push('global') },
+      })
+
+      const chain = pm.chain()
+      chain.loading(() => { order.push('chain'); return false })
+
+      pm.executeLoadingProcessors(true)
+      expect(order).toEqual(['chain'])
+    })
+
+    it('should interrupt requestError processors', () => {
+      const pm = new ProcessorManager()
+      const order: string[] = []
+
+      pm.loadProcessorFromMaxiosConfig({
+        requestError: () => { order.push('global') },
+      })
+
+      const chain = pm.chain()
+      chain.requestError(() => { order.push('chain'); return false })
+
+      pm.executeRequestErrorProcessors(mockAxiosError('err'))
+      expect(order).toEqual(['chain'])
+    })
+
+    it('should interrupt error processors', () => {
+      const pm = new ProcessorManager()
+      const order: string[] = []
+
+      pm.loadProcessorFromMaxiosConfig({
+        error: () => { order.push('global') },
+      })
+
+      const chain = pm.chain()
+      chain.error(() => { order.push('chain'); return false })
+
+      pm.executeErrorProcessors(mockAxiosResponse({ code: -1 }))
+      expect(order).toEqual(['chain'])
+    })
+
+    it('should interrupt anyway processors', () => {
+      const pm = new ProcessorManager()
+      const order: string[] = []
+
+      pm.loadProcessorFromMaxiosConfig({
+        anyway: () => { order.push('global') },
+      })
+
+      const chain = pm.chain()
+      chain.anyway(() => { order.push('chain'); return false })
+
+      pm.executeAnywayProcessors(mockAxiosResponse('ok'))
+      expect(order).toEqual(['chain'])
+    })
+  })
 })
