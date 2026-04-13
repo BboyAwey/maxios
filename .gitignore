@@ -25,3 +25,6 @@ dist-ssr
 
 # npm package publish dir
 lib
+
+# test coverage
+coverage
