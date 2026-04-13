@@ -1,27 +1,33 @@
 {
   "name": "@awey/maxios",
-  "description": "Use axios to fetch data, but configure every api with 4 levels of configurations.",
   "version": "2.1.5",
+  "description": "Layered Axios configuration manager with chained callbacks, retry, caching, and optional React/Vue hooks.",
+  "keywords": [
+    "axios",
+    "http",
+    "request",
+    "api",
+    "layered-config",
+    "retry",
+    "cache",
+    "react-hook",
+    "vue-hook",
+    "chained-calls"
+  ],
+  "homepage": "https://github.com/BboyAwey/maxios#readme",
+  "bugs": {
+    "url": "https://github.com/BboyAwey/maxios/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BboyAwey/maxios.git"
+  },
+  "license": "MIT",
   "author": {
     "name": "Awey",
     "email": "bboyawey@sina.cn"
   },
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "server": "npx nodemon demo/server/index.js",
-    "test": "vitest run",
-    "audit": "yarn audit --level moderate"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:BboyAwey/maxios.git"
-  },
-  "files": [
-    "lib",
-    "README.md",
-    "README_zh.md"
-  ],
+  "sideEffects": false,
   "main": "./lib/index.cjs.js",
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -34,19 +40,44 @@
     "./react": {
       "types": "./lib/react.d.ts",
       "import": "./lib/react.js",
-      "require": "./lib/react.cjs.js",
-      "peerDependencies": {
-        "react": ">=16.8.0"
-      }
+      "require": "./lib/react.cjs.js"
     },
     "./vue": {
       "types": "./lib/vue.d.ts",
       "import": "./lib/vue.js",
-      "require": "./lib/vue.cjs.js",
-      "peerDependencies": {
-        "vue": ">=3.0.0"
-      }
+      "require": "./lib/vue.cjs.js"
     }
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "README_zh.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "server": "npx nodemon demo/server/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "audit": "yarn audit --level moderate",
+    "prepublishOnly": "yarn test && yarn build"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "vue": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@awey/dache": "^1.0.0",
+    "axios": "^1.15.0",
+    "fast-deep-equal": "^3.1.3"
   },
   "devDependencies": {
     "@koa/router": "^12.0.0",
@@ -66,12 +97,9 @@
     "vitest": "^4.1.4",
     "vue": "^3.0.0"
   },
-  "dependencies": {
-    "@awey/dache": "^1.0.0",
-    "axios": "^1.15.0",
-    "fast-deep-equal": "^3.1.3"
+  "engines": {
+    "node": ">=18.0.0"
   },
-  "license": "MIT",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
