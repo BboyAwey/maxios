@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest'
 import ProcessorManager from '../process-manager'
 import { AxiosError, AxiosResponse } from 'axios'
 
@@ -132,7 +133,7 @@ describe('ProcessorManager', () => {
   describe('abort', () => {
     it('should call abort callback', () => {
       const pm = new ProcessorManager()
-      const abortFn = jest.fn()
+      const abortFn = vi.fn()
       pm.onAbort(abortFn)
       const chain = pm.chain()
       chain.abort()

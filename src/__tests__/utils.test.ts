@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { pathJoin, SelfIncrementID, nextTick } from '../utils'
 
 describe('pathJoin', () => {
