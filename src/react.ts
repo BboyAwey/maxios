@@ -36,7 +36,6 @@ type IsFirstParamRequired<T> = T extends (...args: infer Args) => any
   : false
 
 // 类型工具：根据函数签名创建 request 函数的参数类型
-// 如果第一个参数可选，则 request 的参数也应该是可选的
 type RequestFnArgs<T> = T extends (...args: infer Args) => any
   ? T extends (first?: any, ...rest: any[]) => any
     ? Args extends [infer First, ...infer Rest]
@@ -53,13 +52,13 @@ type ExtractRequestReturn<T> = T extends (...args: any[]) => infer R
   : never
 
 // AutoOption 类型定义
-type AutoOption = 
-  | boolean 
+type AutoOption =
+  | boolean
   | (() => boolean)
-  | { 
+  | {
       enable?: boolean
       condition?: () => boolean
-      debounce?: boolean | number  // 默认为 false，true 时默认 300ms，number 时为指定毫秒数
+      debounce?: boolean | number
     }
 
 // UseMaxios 返回类型
@@ -67,18 +66,43 @@ type UseMaxiosReturn<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>,
   TChain extends IProcessorsChain<any, any, any> = ExtractRequestReturn<TRequestFn>
 > = {
-  // data
   data: ExtractFinalResult<TChain> | undefined
-  // loading
   loading: boolean
-  // request 函数 - 根据 requestFn 的参数是否必填来决定 request 的参数是否必填
   request: HasParams<TRequestFn> extends true
     ? IsFirstParamRequired<TRequestFn> extends true
       ? (...args: ExtractRequestArgs<TRequestFn>) => IProcessorsChain<any, any, any>
       : (...args: RequestFnArgs<TRequestFn>) => IProcessorsChain<any, any, any>
     : () => IProcessorsChain<any, any, any>
-  // error
   error: ExtractOriginResult<TChain> | AxiosError<ExtractOriginResult<TChain>, ExtractPayload<TChain>> | undefined
+}
+
+// 自定义 hook：用深比较稳定引用，避免 args 每次渲染产生新引用导致无限循环
+function useDeepCompareRef<T>(value: T): T {
+  const ref = useRef<T>(value)
+  if (!isEqual(ref.current, value)) {
+    ref.current = value
+  }
+  return ref.current
+}
+
+// 解析 auto 配置，返回是否应该自动触发
+function resolveAutoOption(auto: AutoOption): boolean {
+  if (typeof auto === 'function') return auto()
+  if (typeof auto === 'object') {
+    const enabled = auto.enable ?? true
+    if (!enabled) return false
+    return auto.condition ? auto.condition() : true
+  }
+  return auto ?? true
+}
+
+// 解析 debounce 延迟
+function resolveDebounceDelay(auto: AutoOption): number | null {
+  if (typeof auto === 'object' && auto.debounce !== undefined) {
+    if (auto.debounce === true) return 300
+    if (typeof auto.debounce === 'number') return auto.debounce
+  }
+  return null
 }
 
 // useMaxios 函数重载：无参数的请求方法
@@ -104,229 +128,93 @@ export function useMaxios<
   requestFn: TRequestFn,
   options?: { args?: ExtractRequestArgs<TRequestFn>, auto?: AutoOption }
 ): UseMaxiosReturn<TRequestFn> {
-  // 从 options 中提取 args 和 auto
-  const initialArgs = options?.args
-  const auto = options?.auto ?? true // 默认值为 true
+  const auto = options?.auto ?? true
+  const debounceDelay = resolveDebounceDelay(auto)
+
   type Chain = ExtractRequestReturn<TRequestFn>
   type FinalResult = ExtractFinalResult<Chain>
   type OriginResult = ExtractOriginResult<Chain>
   type Payload = ExtractPayload<Chain>
-  type Args = ExtractRequestArgs<TRequestFn>
 
   const [data, setData] = useState<FinalResult | undefined>(undefined)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<OriginResult | AxiosError<OriginResult, Payload> | undefined>(undefined)
-  
+
+  // 用深比较稳定 args 引用
+  const stableArgs = useDeepCompareRef(options?.args)
+
   const chainRef = useRef<IProcessorsChain<any, any, any> | null>(null)
-  const initialArgsRef = useRef<Args | undefined>(initialArgs)
-  const requestFnRef = useRef<TRequestFn>(requestFn)
+  const requestFnRef = useRef(requestFn)
+  const argsRef = useRef(stableArgs)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // 更新初始参数引用
-  useEffect(() => {
-    initialArgsRef.current = initialArgs
-  }, [initialArgs])
+  // 始终保持最新引用
+  requestFnRef.current = requestFn
+  argsRef.current = stableArgs
 
-  // 更新请求函数引用
-  useEffect(() => {
-    requestFnRef.current = requestFn
-  }, [requestFn])
-
-  // 清理函数：组件卸载时 abort 请求
+  // 组件卸载时清理
   useEffect(() => {
     return () => {
-      if (chainRef.current) {
-        chainRef.current.abort()
-      }
+      chainRef.current?.abort()
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
     }
   }, [])
 
-  // 创建请求函数
+  // 核心请求函数
   const request = useCallback((...newArgs: any[]): IProcessorsChain<any, any, any> => {
-    // 重置错误状态
     setError(undefined)
 
-    // 获取最新的请求函数引用
-    const currentRequestFn = requestFnRef.current
-    
-    // 调用请求函数
-    // 使用类型断言来处理不同的函数签名
+    const fn = requestFnRef.current
     let chain: IProcessorsChain<any, any, any>
-    if (currentRequestFn.length === 0) {
-      // 无参数的请求方法
-      chain = (currentRequestFn as () => IProcessorsChain<any, any, any>)()
+
+    if (fn.length === 0) {
+      chain = (fn as () => IProcessorsChain<any, any, any>)()
     } else {
-      // 有参数的请求方法
-      // 确定使用的参数：优先使用新参数，否则使用初始参数
-      const args = newArgs.length > 0 ? newArgs : initialArgsRef.current
-      
+      const args = newArgs.length > 0 ? newArgs : argsRef.current
       if (args !== undefined && args.length > 0) {
-        // 提供了参数，使用展开运算符调用
-        chain = (currentRequestFn as (...args: any[]) => IProcessorsChain<any, any, any>)(...args)
+        chain = (fn as (...a: any[]) => IProcessorsChain<any, any, any>)(...args)
       } else {
-        // 没有提供参数，但函数需要参数
-        // 对于可选参数函数，应该允许调用而不传参数
-        // 尝试调用函数，如果参数是可选的，调用会成功；如果是必填的，函数内部可能会报错
-        // 这里我们尝试调用，让函数自己决定是否接受无参数调用
-        try {
-          chain = (currentRequestFn as (...args: any[]) => IProcessorsChain<any, any, any>)()
-        } catch (err) {
-          // 如果调用失败，说明参数是必填的
-          throw new Error('Request function requires parameters but none were provided')
-        }
+        chain = (fn as (...a: any[]) => IProcessorsChain<any, any, any>)()
       }
     }
 
-    // 保存 chain 引用以便后续 abort
     chainRef.current = chain
 
-    // 设置 loading 状态
-    chain.loading((status: boolean) => {
-      setLoading(status)
-    })
-
-    // 处理成功响应
-    chain.success((responseData: FinalResult) => {
-      setData(responseData)
-      setError(undefined)
-    })
-
-    // 处理请求错误
-    chain.requestError((err: AxiosError<OriginResult, Payload>) => {
-      setError(err)
-      setData(undefined)
-    })
-
-    // 处理业务错误
-    chain.error((errorData: OriginResult) => {
-      setError(errorData)
-      setData(undefined)
-    })
+    chain.loading((status: boolean) => { setLoading(status) })
+    chain.success((res: FinalResult) => { setData(res); setError(undefined) })
+    chain.requestError((err: AxiosError<OriginResult, Payload>) => { setError(err); setData(undefined) })
+    chain.error((err: OriginResult) => { setError(err); setData(undefined) })
 
     return chain
   }, [])
 
-  // 使用 useRef 来跟踪上一次的 args 值，使用深度比较避免无限循环
-  const prevArgsRef = useRef<Args | undefined>()
-  
-  // 稳定 auto 的引用
-  const autoRef = useRef(auto)
-  useEffect(() => {
-    autoRef.current = auto
-  }, [auto])
-  
-  // 使用 useRef 存储 condition 函数（防御性编程）
-  const conditionRef = useRef<(() => boolean) | undefined>()
-  useEffect(() => {
-    if (typeof auto === 'object' && auto.condition) {
-      conditionRef.current = auto.condition
-    } else {
-      conditionRef.current = undefined
-    }
-  }, [auto])
-  
-  // 解析 debounce 参数
-  const getDebounceDelay = (): number | null => {
-    if (typeof auto === 'object' && auto.debounce !== undefined) {
-      if (auto.debounce === true) {
-        return 300 // 默认 300ms
-      } else if (typeof auto.debounce === 'number') {
-        return auto.debounce
-      }
-    }
-    return null // 不防抖
-  }
-  
-  const debounceDelay = getDebounceDelay()
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  
-  // 清理防抖定时器
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-        debounceTimerRef.current = null
-      }
-    }
-  }, [])
-  
-  // 如果 auto 是函数，需要跟踪其返回值的变化
-  const autoValue = typeof auto === 'function' ? auto() : typeof auto === 'object' ? auto.enable : auto
-  const prevAutoValueRef = useRef<boolean | undefined>()
-  
-  // 触发请求的函数（可能被防抖包装）
+  // 触发请求（带可选防抖）
   const triggerRequest = useCallback(() => {
-    if (requestFn.length === 0) {
-      // 无参数函数：直接调用
+    const fn = requestFnRef.current
+    const args = argsRef.current
+    if (fn.length === 0) {
       request()
+    } else if (args !== undefined && args.length > 0) {
+      request(...args)
     } else {
-      // 有参数函数
-      if (initialArgs !== undefined && initialArgs.length > 0) {
-        // 有 args：使用 args
-        request(...initialArgs)
-      } else {
-        // 没有 args：对于可选参数函数，应该允许调用而不传参数
-        // request 函数内部会处理这种情况
-        request()
-      }
+      request()
     }
-  }, [requestFn, initialArgs, request])
-  
-  // 自动触发请求逻辑
+  }, [request])
+
+  // 自动触发逻辑：仅依赖 stableArgs（深比较后的稳定引用）
   useEffect(() => {
-    // 使用深度比较检查 args 是否真的变化了
-    const argsChanged = !isEqual(initialArgs, prevArgsRef.current)
-    
-    // 检查 auto 值是否变化了（只对非函数类型有效）
-    const autoChanged = typeof auto !== 'function' && typeof auto !== 'object' && autoValue !== prevAutoValueRef.current
-    
-    // 如果 args 和 auto 都没有变化，不触发请求
-    if (!argsChanged && !autoChanged && prevArgsRef.current !== undefined) {
-      return
-    }
-    
-    // 更新上一次的值
-    prevArgsRef.current = initialArgs
-    if (typeof auto !== 'function' && typeof auto !== 'object') {
-      prevAutoValueRef.current = autoValue
-    }
-    
-    // 解析 shouldAuto
-    let shouldAuto = true
-    const currentAuto = autoRef.current
-    if (typeof currentAuto === 'object') {
-      // enable 默认为 true（如果未提供）
-      shouldAuto = currentAuto.enable ?? true
-      if (shouldAuto && conditionRef.current) {
-        shouldAuto = conditionRef.current() // 调用最新的 condition
-      }
-    } else if (typeof currentAuto === 'function') {
-      shouldAuto = currentAuto()
-    } else {
-      shouldAuto = currentAuto ?? true
-    }
-    
-    if (!shouldAuto) {
-      return
-    }
-    
-    // 处理防抖：仅在 args 变化时防抖
-    if (debounceDelay !== null && argsChanged) {
-      // 清除之前的定时器
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-      // 设置新的定时器
+    if (!resolveAutoOption(auto)) return
+
+    if (debounceDelay !== null) {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
       debounceTimerRef.current = setTimeout(() => {
         triggerRequest()
         debounceTimerRef.current = null
       }, debounceDelay)
     } else {
-      // 不防抖或非 args 变化，直接触发
       triggerRequest()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialArgs, autoValue, debounceDelay, triggerRequest])
-  // 关键：使用深度比较来检查 args 是否真的变化，避免引用变化导致的无限循环
+  }, [stableArgs, auto, debounceDelay, triggerRequest])
 
   return {
     data,
