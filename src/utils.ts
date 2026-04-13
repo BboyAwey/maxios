@@ -12,7 +12,7 @@ export const pathJoin = (...pathes: (string | undefined | null)[]): string => {
     .filter(Boolean)
     .map(path => {
       return path!
-        .replace(/\/+/, '/')
+        .replace(/\/+/g, '/')
         .split('/')
         .filter(Boolean)
         .join('/')

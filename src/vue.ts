@@ -1,5 +1,6 @@
 import { ref, onUnmounted, onMounted, watch, type Ref, type ComputedRef } from 'vue'
 import { AxiosError } from 'axios'
+import isEqual from 'fast-deep-equal'
 import { IProcessorsChain } from './interfaces'
 
 // 类型工具：从 IProcessorsChain 中提取 FinalResult
@@ -316,7 +317,7 @@ export function useMaxios<
         }
         
         // 检查 args 是否真的变化了（仅在 args 变化时应用防抖）
-        const argsChanged = JSON.stringify(newArgs) !== JSON.stringify(prevArgs)
+        const argsChanged = !isEqual(newArgs, prevArgs)
         prevArgs = newArgs
         
         // 处理防抖：仅在 args 变化时防抖
