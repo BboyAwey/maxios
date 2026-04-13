@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import ConfigManager from '../config-manager'
 
 beforeEach(() => {
@@ -85,9 +86,9 @@ describe('ConfigManager', () => {
 
   describe('getNearestCallback', () => {
     it('should return api level callback first', () => {
-      const globalFn = jest.fn()
-      const moduleFn = jest.fn()
-      const apiFn = jest.fn()
+      const globalFn = vi.fn()
+      const moduleFn = vi.fn()
+      const apiFn = vi.fn()
       ConfigManager.globalConfig = { expect: globalFn }
       const cm = new ConfigManager({
         moduleConfig: { expect: moduleFn },
@@ -97,7 +98,7 @@ describe('ConfigManager', () => {
     })
 
     it('should fall back to module level', () => {
-      const moduleFn = jest.fn()
+      const moduleFn = vi.fn()
       ConfigManager.globalConfig = {}
       const cm = new ConfigManager({
         moduleConfig: { expect: moduleFn },
@@ -107,7 +108,7 @@ describe('ConfigManager', () => {
     })
 
     it('should fall back to default', () => {
-      const defaultFn = jest.fn()
+      const defaultFn = vi.fn()
       ConfigManager.globalConfig = {}
       const cm = new ConfigManager({
         moduleConfig: {},
