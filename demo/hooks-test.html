@@ -1,65 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maxios Hooks Test</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-          sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      #app {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      .demo-section {
-        margin-bottom: 40px;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .demo-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px 20px;
-        font-size: 20px;
-        font-weight: bold;
-      }
-      .demo-container {
-        padding: 20px;
-        background: #fafafa;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="app">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h1 style="margin: 0; color: #333;">
-          Maxios Hooks 完整测试页面
-        </h1>
-        <a href="/" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-          ← 返回基础功能测试
-        </a>
-      </div>
-      
-      <div class="demo-section">
-        <div class="demo-header">React Hook Demo</div>
-        <div id="react-demo-container" class="demo-container"></div>
-      </div>
-      
-      <div class="demo-section">
-        <div class="demo-header">Vue Hook Demo</div>
-        <div id="vue-demo-container" class="demo-container"></div>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maxios — Hooks Demo</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    #app { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .demo-section { margin-bottom: 32px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .demo-header { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; padding: 14px 20px; font-size: 18px; font-weight: 600; }
+    .demo-body { padding: 20px; background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h1 style="margin:0">Maxios Hooks Demo</h1>
+      <a href="/" style="padding:8px 16px;background:#6c757d;color:#fff;text-decoration:none;border-radius:6px">← Back</a>
     </div>
-    <script type="module" src="/demo/hooks-test.ts"></script>
-  </body>
+    <div class="demo-section">
+      <div class="demo-header">React — useMaxios</div>
+      <div id="react-demo-container" class="demo-body"></div>
+    </div>
+    <div class="demo-section">
+      <div class="demo-header">Vue — useMaxios</div>
+      <div id="vue-demo-container" class="demo-body"></div>
+    </div>
+  </div>
+  <script type="module" src="/demo/hooks-test.ts"></script>
+</body>
 </html>
-

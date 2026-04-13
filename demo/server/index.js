@@ -3,160 +3,83 @@ const Router = require('@koa/router')
 const koaBody = require('koa-body')
 
 const app = new Koa()
-const router = new Router({
-  prefix: '/api'
-})
+const router = new Router({ prefix: '/api' })
 
-router.get('/get-shit-2', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 5000)
-  })
-  ctx.body = {
-    code: 0,
-    msg: '',
-    data: {
-      shit: 1
-    }
-  }
-  ctx.status = 200
-  await next()
-})
+// ========== User CRUD ==========
 
-router.get('/get-shit', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 1000)
-  })
-  ctx.body = {
-    code: 0,
-    msg: '',
-    data: {
-      shit: 1
-    }
-  }
-  ctx.status = 200
-  await next()
-})
-
-
-router.put('/put-shit', async (ctx, next) => {
-  ctx.body = {
-    code: 0,
-    msg: '',
-    data: ctx.request.body
-  }
-  ctx.status = 200
-  await next()
-})
-
-router.post('/post-shit', async (ctx, next) => {
-  ctx.body = {
-    code: 0,
-    msg: '',
-    data: ctx.request.body
-  }
-  ctx.status = 200
-  await next()
-})
-
-router.delete('/delete-shit', async (ctx, next) => {
-  ctx.body = {
-    code: 0,
-    msg: '',
-    data: ctx.request.query
-  }
-  ctx.status = 200
-  await next()
-})
-
-router.get('/http-error-shit', async (ctx, next) => {
-  ctx.status = 500
-  ctx.body = 'shit happened'
-})
-
-router.get('/biz-error-shit', async (ctx, next) => {
-  ctx.status = 200
-  ctx.body = {
-    code: 1,
-    msg: 'shit happened',
-    data: ctx.request.query
-  }
-})
-
-// 支持参数查询的接口
 router.get('/users', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
+  await delay(500)
+  ctx.body = success({
+    users: [
+      { id: 1, name: ctx.request.query.name || 'Alice', age: 28 },
+      { id: 2, name: 'Bob', age: 32 }
+    ],
+    query: ctx.request.query
   })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: {
-      users: [
-        { id: 1, name: ctx.request.query.name || 'User 1', age: 20 },
-        { id: 2, name: 'User 2', age: 25 }
-      ],
-      query: ctx.request.query
-    }
-  }
-  ctx.status = 200
   await next()
 })
 
-// 支持动态路径参数的接口：/users/:id
-router.get('/users/:id', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
-  })
-  const userId = parseInt(ctx.params.id)
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: {
-      id: userId,
-      name: ctx.request.query.name || `User ${userId}`,
-      age: 20 + userId
-    }
-  }
-  ctx.status = 200
-  await next()
-})
-
-// 支持搜索接口：/users/search
 router.get('/users/search', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
+  await delay(500)
+  ctx.body = success({
+    users: [
+      { id: 1, name: 'Search Result 1', age: 20 },
+      { id: 2, name: 'Search Result 2', age: 25 }
+    ],
+    page: parseInt(ctx.request.query.page) || 1,
+    query: ctx.request.query.query || ''
   })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: {
-      users: [
-        { id: 1, name: 'Search Result 1', age: 20 },
-        { id: 2, name: 'Search Result 2', age: 25 }
-      ],
-      page: parseInt(ctx.request.query.page) || 1,
-      query: ctx.request.query.query || ''
-    }
-  }
-  ctx.status = 200
   await next()
 })
 
-// 支持缓存的接口（返回时间戳用于验证缓存）
+router.get('/users/:id', async (ctx, next) => {
+  await delay(500)
+  const id = parseInt(ctx.params.id)
+  ctx.body = success({
+    id,
+    name: ctx.request.query.name || `User ${id}`,
+    age: 20 + id
+  })
+  await next()
+})
+
+router.post('/users', async (ctx, next) => {
+  ctx.body = success({ id: Date.now(), ...ctx.request.body })
+  await next()
+})
+
+router.put('/users/:id', async (ctx, next) => {
+  ctx.body = success({ id: parseInt(ctx.params.id), ...ctx.request.body })
+  await next()
+})
+
+router.delete('/users/:id', async (ctx, next) => {
+  ctx.body = success({ id: parseInt(ctx.params.id) })
+  await next()
+})
+
+// ========== Error endpoints ==========
+
+router.get('/error/http', async (ctx, next) => {
+  ctx.status = 500
+  ctx.body = 'Internal Server Error'
+  await next()
+})
+
+router.get('/error/business', async (ctx, next) => {
+  ctx.body = { code: 1, msg: 'Business logic failed', data: null }
+  await next()
+})
+
+// ========== Cache test ==========
+
 router.get('/cached-data', async (ctx, next) => {
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: {
-      timestamp: Date.now(),
-      message: 'This data should be cached'
-    }
-  }
-  ctx.status = 200
+  ctx.body = success({ timestamp: Date.now(), message: 'This data should be cached' })
   await next()
 })
 
-// 支持重试的接口（前两次返回错误，第三次成功）
+// ========== Retry test ==========
+
 let retryCount = 0
 router.get('/retry-test', async (ctx, next) => {
   retryCount++
@@ -164,117 +87,59 @@ router.get('/retry-test', async (ctx, next) => {
     ctx.status = 500
     ctx.body = { error: 'Retry needed', attempt: retryCount }
   } else {
-    retryCount = 0 // Reset for next test
-    ctx.status = 200
-    ctx.body = {
-      code: 0,
-      msg: 'success',
-      data: {
-        message: 'Success after retries',
-        attempts: 3
-      }
-    }
+    retryCount = 0
+    ctx.body = success({ message: 'Success after retries', attempts: 3 })
   }
   await next()
 })
 
-// 支持重试的业务错误接口（返回 code !== 0）
 let bizRetryCount = 0
 router.get('/biz-retry-test', async (ctx, next) => {
   bizRetryCount++
   if (bizRetryCount < 3) {
-    ctx.status = 200
-    ctx.body = {
-      code: 1,
-      msg: 'Business error, retry needed',
-      data: { attempt: bizRetryCount }
-    }
+    ctx.body = { code: 1, msg: 'Business error, retry needed', data: { attempt: bizRetryCount } }
   } else {
-    bizRetryCount = 0 // Reset for next test
-    ctx.status = 200
-    ctx.body = {
-      code: 0,
-      msg: 'success',
-      data: {
-        message: 'Success after business retries',
-        attempts: 3
-      }
-    }
+    bizRetryCount = 0
+    ctx.body = success({ message: 'Success after business retries', attempts: 3 })
   }
   await next()
 })
 
-// 延迟响应接口（用于测试 race）
+// ========== Race / All test ==========
+
 router.get('/slow-request', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 3000)
-  })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: { message: 'Slow response', delay: 3000 }
-  }
-  ctx.status = 200
+  await delay(3000)
+  ctx.body = success({ message: 'Slow response', delay: 3000 })
   await next()
 })
 
-// 快速响应接口（用于测试 race）
 router.get('/fast-request', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 500)
-  })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: { message: 'Fast response', delay: 500 }
-  }
-  ctx.status = 200
+  await delay(500)
+  ctx.body = success({ message: 'Fast response', delay: 500 })
   await next()
 })
 
-// 多个并发请求接口
-router.get('/request-1', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 1000)
-  })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: { id: 1, message: 'Request 1 completed' }
-  }
-  ctx.status = 200
+router.get('/request/:id', async (ctx, next) => {
+  const id = parseInt(ctx.params.id)
+  await delay(500 * id)
+  ctx.body = success({ id, message: `Request ${id} completed` })
   await next()
 })
 
-router.get('/request-2', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 1500)
-  })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: { id: 2, message: 'Request 2 completed' }
-  }
-  ctx.status = 200
-  await next()
-})
+// ========== Helpers ==========
 
-router.get('/request-3', async (ctx, next) => {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 2000)
-  })
-  ctx.body = {
-    code: 0,
-    msg: 'success',
-    data: { id: 3, message: 'Request 3 completed' }
-  }
-  ctx.status = 200
-  await next()
-})
+function success(data) {
+  return { code: 0, msg: 'success', data }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// ========== Start ==========
 
 const PORT = 3000
 app.use(koaBody())
 app.use(router.routes())
-
 app.listen(PORT)
-console.log('Demo server now running on port ' + PORT)
+console.log(`Demo server running at http://localhost:${PORT}`)
