@@ -132,3 +132,17 @@ export const toPromise = <Payload = any, OriginResult = any, FinalResult = Origi
       })
   })
 }
+
+export type {
+  IProcessorsChain,
+  TMaxiosConfig,
+  TAxiosConfig,
+  TLoading,
+  TSuccess,
+  TError,
+  TRequestError,
+  TAnyway,
+  TExpect,
+  TExtractor,
+  IRetryWhen,
+} from './interfaces'

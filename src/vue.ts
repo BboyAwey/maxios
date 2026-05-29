@@ -69,8 +69,10 @@ type ExtractRequestReturn<T> = T extends (...args: any[]) => infer R
     : never
   : never
 
+export type { IProcessorsChain } from './interfaces'
+
 // AutoOption 类型定义
-type AutoOption = 
+export type AutoOption = 
   | boolean 
   | (() => boolean)
   | { 
@@ -80,7 +82,7 @@ type AutoOption =
     }
 
 // UseMaxios 返回类型
-type UseMaxiosReturn<
+export type UseMaxiosReturn<
   TRequestFn extends (...args: any[]) => IProcessorsChain<any, any, any>,
   TChain extends IProcessorsChain<any, any, any> = ExtractRequestReturn<TRequestFn>
 > = {
