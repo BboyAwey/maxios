@@ -68,7 +68,8 @@ export default defineConfig(({ mode }) => {
       dts({
         entryRoot: './src',
         include: ['./src/**/*.ts'],
-        exclude: ['./src/**/*.test.ts']
+        exclude: ['./src/**/*.test.ts'],
+        rollupTypes: true
       })
     ]
   }
