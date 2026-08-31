@@ -3,6 +3,11 @@ export const nextTick = (callback: Function) => {
 }
 
 export const pathJoin = (...pathes: (string | undefined | null)[]): string => {
+  pathes = pathes
+    .filter(Boolean)
+    .map(path => path?.trim())
+    .filter(Boolean)
+
   if (!pathes.length) return ''
 
   if (pathes.length === 1) return pathes[0]!
